@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AniGenX — Image-to-Video AI Engine</title>
+  <title>VANTA Motion — Image-to-Video AI Engine</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -157,12 +157,13 @@ function App() {
   const [paths, setPaths] = useState(["panR","zoomIn"]);
   const [preset, setPreset] = useState("cinematic");
   const [resolution, setResolution] = useState("4K");
+  const [duration, setDuration] = useState({hours:0,minutes:0,seconds:6});
   const [credits, setCredits] = useState(12);
   const [queue, setQueue] = useState([]);
   const [gallery, setGallery] = useState([
-    { id:"demo-1", title:"Neon Atelier", preset:"Cyberpunk", resolution:"4K", duration:"06.0s", src:"https://cdn.coverr.co/videos/coverr-a-woman-walking-in-a-neon-lit-city-1577/1080p.mp4" },
-    { id:"demo-2", title:"Golden Horizon", preset:"Cinematic", resolution:"8K", duration:"06.0s", src:"https://cdn.coverr.co/videos/coverr-aerial-view-of-a-coastline-1572/1080p.mp4" },
-    { id:"demo-3", title:"Quiet Architecture", preset:"Photorealistic", resolution:"4K", duration:"06.0s", src:"https://cdn.coverr.co/videos/coverr-modern-building-exterior-1575/1080p.mp4" }
+    { id:"demo-1", title:"Neon Atelier", preset:"Cyberpunk", resolution:"4K", duration:"00:00:06", src:"https://cdn.coverr.co/videos/coverr-a-woman-walking-in-a-neon-lit-city-1577/1080p.mp4", isVideo:true },
+    { id:"demo-2", title:"Golden Horizon", preset:"Cinematic", resolution:"8K", duration:"00:00:06", src:"https://cdn.coverr.co/videos/coverr-aerial-view-of-a-coastline-1572/1080p.mp4", isVideo:true },
+    { id:"demo-3", title:"Quiet Architecture", preset:"Photorealistic", resolution:"4K", duration:"00:00:06", src:"https://cdn.coverr.co/videos/coverr-modern-building-exterior-1575/1080p.mp4", isVideo:true }
   ]);
   const [modal, setModal] = useState(null);
   const [exportFormat, setExportFormat] = useState("MP4 (H.264)");
@@ -176,6 +177,9 @@ function App() {
     const resMultiplier = modal.resolution === "8K" ? 2.15 : modal.resolution === "4K" ? 1.45 : .85;
     return Math.max(8, Math.round(f.base * qualityMap[exportQuality] * resMultiplier * 0.6));
   }, [modal, exportFormat, exportQuality]);
+
+  const durationSeconds = Math.min(359999, Math.max(1, Number(duration.hours||0)*3600 + Number(duration.minutes||0)*60 + Number(duration.seconds||0)));
+  const durationLabel = `${String(Math.floor(durationSeconds/3600)).padStart(2,"0")}:${String(Math.floor((durationSeconds%3600)/60)).padStart(2,"0")}:${String(durationSeconds%60).padStart(2,"0")}`;
 
   const notify = (msg) => {
     setToast(msg);
@@ -246,24 +250,25 @@ function App() {
       setQueue(q => q.filter(x => x.id !== id));
       setGallery(g => [{
         id, title, preset:presets.find(p=>p.id===preset)?.name || "Cinematic",
-        resolution, duration:"06.0s", src:file.url
+        resolution, duration:durationLabel, src:file.url, isVideo:false
       }, ...g]);
       notify("Render complete — master asset added to gallery.");
     }, 6000);
   };
 
-  const exportAsset = () => {
-    const blob = new Blob(
-      [`VANTA Motion export simulation\nAsset: ${modal.title}\nFormat: ${exportFormat}\nQuality: ${exportQuality}\nEstimated size: ${estimatedSize} MB`],
-      { type:"text/plain" }
-    );
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${modal.title.replace(/\s+/g,"-").toLowerCase()}.${formatMap[exportFormat].ext}.txt`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-    setModal(null);
-    notify(`Export simulation prepared — ${estimatedSize} MB ${formatMap[exportFormat].ext.toUpperCase()}.`);
+  const exportAsset = async () => {
+    if (!modal) return;
+    const base=(modal.title||"vanta-master").replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
+    try {
+      const res=await fetch(modal.src); const blob=await res.blob();
+      const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+      a.download=`${base}.${formatMap[exportFormat].ext}`; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href),1000); setModal(null);
+      notify(`Downloaded source master for ${exportFormat}.`);
+    } catch {
+      const blob=new Blob([`VANTA MOTION EXPORT\nAsset: ${modal.title}\nRequested format: ${exportFormat}\nQuality: ${exportQuality}\nDuration: ${modal.duration}\nEstimated size: ${estimatedSize} MB\n\nBrowser limitation: true codec transcoding requires FFmpeg/WASM or a server encoder.`],{type:"text/plain"});
+      const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`${base}-${formatMap[exportFormat].ext}-export-manifest.txt`; a.click(); URL.revokeObjectURL(a.href); setModal(null); notify("Export manifest downloaded; codec transcoding requires an encoder.");
+    }
   };
 
   return (
@@ -275,7 +280,7 @@ function App() {
               <Clapperboard className="w-5 h-5 text-violet-300"/>
             </div>
             <div>
-              <div className="font-semibold tracking-[.18em] text-sm">AniGenX<span className="text-violet-400">/</span></div>
+              <div className="font-semibold tracking-[.18em] text-sm">VANTA<span className="text-violet-400">/</span>MOTION</div>
               <div className="text-[10px] text-zinc-500 tracking-[.22em] uppercase">Image-to-Video AI Engine</div>
             </div>
           </div>
@@ -377,8 +382,17 @@ function App() {
             </div>
           </section>
 
+          <section className="mb-7">
+            <SectionTitle icon={<Film/>} title="05 / Output Duration" />
+            <div className="rounded-2xl border border-white/5 bg-white/[.025] p-4">
+              <div className="flex items-center justify-between mb-3"><div><div className="text-xs font-medium">Master Sequence Length</div><div className="text-[9px] text-zinc-600 mt-1">Hours, minutes and seconds.</div></div><div className="px-2.5 py-1.5 rounded-lg bg-violet-500/10 border border-violet-400/15 text-xs font-mono text-violet-200">{durationLabel}</div></div>
+              <div className="grid grid-cols-3 gap-2">{[["hours","HH",23],["minutes","MM",59],["seconds","SS",59]].map(([key,label,max])=><label key={key}><span className="block text-[8px] uppercase tracking-widest text-zinc-600 mb-1.5">{label}</span><input type="number" min="0" max={max} value={duration[key]} onChange={e=>setDuration(d=>({...d,[key]:Math.max(0,Math.min(max,Number(e.target.value||0)))}))} className="w-full rounded-xl border border-white/7 bg-black/20 px-3 py-2.5 text-sm font-mono text-center outline-none focus:border-violet-400/40" /></label>)}</div>
+              <div className="mt-3 flex gap-1.5">{[6,15,30,60,120].map(sec=><button key={sec} onClick={()=>setDuration({hours:Math.floor(sec/3600),minutes:Math.floor(sec%3600/60),seconds:sec%60})} className="flex-1 py-1.5 rounded-lg border border-white/5 bg-white/[.02] text-[8px] text-zinc-500 hover:text-white">{sec<60?sec+"s":sec/60+"m"}</button>)}</div>
+            </div>
+          </section>
+
           <section className="mb-6">
-            <SectionTitle icon={<Maximize2/>} title="05 / Resolution Target" />
+            <SectionTitle icon={<Maximize2/>} title="06 / Resolution Target" />
             <div className="grid grid-cols-3 gap-2">
               {["HD","4K","8K"].map(r => (
                 <button key={r} onClick={()=>setResolution(r)} className={`py-3 rounded-xl border text-xs font-semibold ${resolution===r ? "bg-violet-500/15 border-violet-400/45 text-violet-200" : "bg-white/[.02] border-white/5 text-zinc-500 hover:text-white"}`}>
@@ -479,7 +493,7 @@ function App() {
               <BadgeCheck className="w-5 h-5 text-emerald-400"/>
               <div><div className="text-xs font-medium">Production simulation environment</div><div className="text-[10px] text-zinc-600 mt-0.5">Client-side state · 6-second render pipeline · export test mode</div></div>
             </div>
-            <div className="text-[10px] text-zinc-600 font-mono">AniGenX ENGINE / LOCAL SESSION</div>
+            <div className="text-[10px] text-zinc-600 font-mono">VANTA ENGINE / LOCAL SESSION</div>
           </div>
         </section>
       </main>
@@ -546,7 +560,7 @@ function VideoCard({asset,onExport}) {
   return (
     <article className="group rounded-2xl overflow-hidden border border-white/6 bg-[#0d0f14] hover:border-violet-400/25 transition-all hover:-translate-y-0.5">
       <div className="relative aspect-video bg-black overflow-hidden">
-        <video
+        {asset.isVideo ? <video
           src={asset.src}
           muted
           loop
@@ -554,7 +568,7 @@ function VideoCard({asset,onExport}) {
           className="w-full h-full object-cover transition duration-700 group-hover:scale-[1.025]"
           onMouseEnter={e=>{e.currentTarget.play().catch(()=>{});setPlaying(true)}}
           onMouseLeave={e=>{e.currentTarget.pause();e.currentTarget.currentTime=0;setPlaying(false)}}
-        />
+        /> : <img src={asset.src} alt={asset.title} className="w-full h-full object-cover transition duration-700 group-hover:scale-[1.025]" onMouseEnter={()=>setPlaying(true)} onMouseLeave={()=>setPlaying(false)} />}
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/75 via-transparent to-black/20"/>
         <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-black/60 border border-white/10 text-[9px] tracking-widest uppercase">{asset.resolution}</div>
         <div className={`absolute top-3 right-3 px-2 py-1 rounded-md text-[9px] ${playing ? "bg-violet-500/70 text-white" : "bg-black/60 text-zinc-400"}`}>{playing ? "LIVE PREVIEW" : "MASTER"}</div>
