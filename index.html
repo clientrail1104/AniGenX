@@ -100,76 +100,143 @@ function App(){
   },6000);
  }
 
- async function encodeWatchable(item){
-  if(!item.src||!item.src.startsWith("data:image/"))throw Error("No image source");
-  const img=new Image();img.src=item.src;
-  await new Promise((res,rej)=>{img.onload=res;img.onerror=rej});
-  const w=resolution==="8K"?1920:resolution==="4K"?1280:960,hgt=Math.round(w*9/16);
-  const c=document.createElement("canvas");c.width=w;c.height=hgt;
-  const ctx=c.getContext("2d",{alpha:false});
-  const stream=c.captureStream(30);
-  const mime=["video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"].find(x=>MediaRecorder.isTypeSupported(x));
-  if(!mime)throw Error("WebM recording is not supported by this browser");
-  const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:exportQuality==="Extreme"?12000000:exportQuality==="High"?7000000:3500000});
-  const chunks=[];rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
-  const stopped=new Promise(resolve=>rec.onstop=resolve);rec.start(200);
-  const frames=Math.max(30,item.duration*30);let frame=0;
+ async function encodeWatchable(item, preferredFormat){
+  if(!item.src || !item.src.startsWith("data:image/")) throw new Error("This gallery item has no source image. Generate a new master first.");
+
+  const img=new Image();
+  img.decoding="async";
+  img.src=item.src;
+  await new Promise((resolve,reject)=>{
+    img.onload=resolve;
+    img.onerror=()=>reject(new Error("The source image cannot be decoded by this browser. Try PNG/JPG/WebP."));
+  });
+
+  const w=resolution==="8K"?1920:resolution==="4K"?1280:960;
+  const hgt=Math.round(w*9/16);
+  const canvas=document.createElement("canvas");
+  canvas.width=w; canvas.height=hgt;
+  const ctx=canvas.getContext("2d",{alpha:false});
+  if(!ctx || !canvas.captureStream) throw new Error("This browser cannot create a video stream.");
+
+  const stream=canvas.captureStream(30);
+  const candidates = preferredFormat==="mp4"
+    ? ["video/mp4;codecs=avc1.42E01E","video/mp4"]
+    : ["video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"];
+
+  const mime=candidates.find(x=>window.MediaRecorder && MediaRecorder.isTypeSupported(x));
+  if(!mime) return null; // caller will use FFmpeg server
+
+  const rec=new MediaRecorder(stream,{
+    mimeType:mime,
+    videoBitsPerSecond:exportQuality==="Extreme"?12000000:exportQuality==="High"?7000000:3500000
+  });
+
+  const chunks=[];
+  rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+  const stopped=new Promise((resolve,reject)=>{
+    rec.onstop=resolve;
+    rec.onerror=e=>reject(e.error||new Error("Browser video recorder failed."));
+  });
+  rec.start(200);
+
+  const seconds=Math.max(1,Number(item.duration)||1);
+  const frames=Math.max(30,Math.round(seconds*30));
+  let frame=0;
+  const motionText=((item.prompt||prompt||"")+" "+selectedPaths.join(" ")).toLowerCase();
+
   const draw=()=>{
-   const t=frame/(frames-1||1),ease=.5-Math.cos(t*Math.PI)/2;
-   const zoom=1+.055*ease+(prompt.toLowerCase().includes("zoom")?.055*ease:0);
-   const pan=Math.sin(t*Math.PI*2)*(.025+(prompt.toLowerCase().includes("pan")?.055:0));
-   const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height,scale=Math.max(w*zoom/iw,hgt*zoom/ih);
-   const dw=iw*scale,dh=ih*scale;
-   ctx.fillStyle="#050507";ctx.fillRect(0,0,w,hgt);ctx.drawImage(img,(w-dw)/2+pan*w,(hgt-dh)/2,dw,dh);
-   const vg=ctx.createRadialGradient(w/2,hgt/2,Math.min(w,hgt)*.15,w/2,hgt/2,Math.max(w,hgt)*.7);
-   vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.4)");ctx.fillStyle=vg;ctx.fillRect(0,0,w,hgt);
-   frame++;if(frame<frames)requestAnimationFrame(draw);else setTimeout(()=>rec.stop(),180);
-  };draw();await stopped;
-  return new Blob(chunks,{type:mime});
+    const t=frame/Math.max(1,frames-1);
+    const ease=.5-Math.cos(t*Math.PI)/2;
+    const zoom=1+.055*ease+(motionText.includes("zoom")?0.055*ease:0);
+    const pan=Math.sin(t*Math.PI*2)*(.025+(motionText.includes("pan")||motionText.includes("orbit")?.055:0));
+    const vertical=Math.cos(t*Math.PI*2)*(.018+(motionText.includes("tilt")?.035:0));
+
+    const iw=img.naturalWidth||img.width, ih=img.naturalHeight||img.height;
+    const scale=Math.max(w*zoom/iw,hgt*zoom/ih);
+    const dw=iw*scale, dh=ih*scale;
+    ctx.fillStyle="#050507"; ctx.fillRect(0,0,w,hgt);
+    ctx.drawImage(img,(w-dw)/2+pan*w,(hgt-dh)/2+vertical*hgt,dw,dh);
+
+    const vg=ctx.createRadialGradient(w/2,hgt/2,Math.min(w,hgt)*.15,w/2,hgt/2,Math.max(w,hgt)*.7);
+    vg.addColorStop(0,"rgba(0,0,0,0)");
+    vg.addColorStop(1,"rgba(0,0,0,.42)");
+    ctx.fillStyle=vg;ctx.fillRect(0,0,w,hgt);
+
+    frame++;
+    if(frame<frames) requestAnimationFrame(draw);
+    else setTimeout(()=>rec.stop(),220);
+  };
+  draw();
+  await stopped;
+  if(!chunks.length) throw new Error("The browser produced an empty video.");
+  return {
+    blob:new Blob(chunks,{type:mime}),
+    mime,
+    ext:mime.startsWith("video/mp4")?"mp4":"webm"
+  };
  }
 
- async function exportNow(){
-  if(!exportItem)return;
-  try{
-   const selected=formats.find(x=>x.id===exportFormat);
-   // First produce a real browser-encoded WebM master.
-   const webmBlob=await encodeWatchable(exportItem);
-
-   if(exportFormat==="webm"){
-    const url=URL.createObjectURL(webmBlob);
-    const base=(exportItem.title||"vanta-master").replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
-    const a=document.createElement("a");a.href=url;a.download=base+"-"+exportItem.duration+"s.webm";
-    document.body.appendChild(a);a.click();a.remove();
-    setGallery(g=>g.map(x=>x.id===exportItem.id?Object.assign({},x,{isVideo:true,src:url,generated:true}):x));
-    setExportItem(null);
-    toastMsg(setToast,"Real watchable WebM downloaded successfully.");
-    return;
-   }
-
-   // Never rename WebM bytes to another container: that creates corrupt/unwatchable files.
-   // A production server must transcode the real WebM with FFmpeg.
+ async function requestTranscode(sourceBlob, sourceName, targetFormat){
    const fd=new FormData();
-   fd.append("video",webmBlob,"vanta-master.webm");
-   fd.append("format",exportFormat);
+   fd.append("video",sourceBlob,sourceName);
+   fd.append("format",targetFormat);
    fd.append("quality",exportQuality);
    fd.append("filename",(exportItem.title||"vanta-master"));
    fd.append("duration",String(exportItem.duration));
 
-   const response=await fetch("/api/transcode",{method:"POST",body:fd});
-   if(!response.ok) throw new Error("FFmpeg transcoding endpoint is unavailable.");
-   const output=await response.blob();
-   const mime=output.type||"application/octet-stream";
-   const url=URL.createObjectURL(new Blob([output],{type:mime}));
-   const base=(exportItem.title||"vanta-master").replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
-   const a=document.createElement("a");a.href=url;a.download=base+"-"+exportItem.duration+"s."+selected.ext;
-   document.body.appendChild(a);a.click();a.remove();
-   setExportItem(null);
-   toastMsg(setToast,"Real "+selected.name+" video downloaded.");
+   let response;
+   try{
+     response=await fetch("/api/transcode",{method:"POST",body:fd});
+   }catch(e){
+     throw new Error("FFmpeg server is not connected. Start the VANTA transcoder server before exporting this format.");
+   }
+   if(!response.ok){
+     let detail="";
+     try{const j=await response.json();detail=j.error||""}catch(_){}
+     throw new Error(detail||"FFmpeg transcoding failed.");
+   }
+   return await response.blob();
+ }
+ async function exportNow(){
+  if(!exportItem)return;
+  try{
+    const selected=formats.find(x=>x.id===exportFormat);
+    let result=null;
+
+    // Try browser-native encoding first. Safari commonly supports H.264/MP4
+    // even when it does not support WebM.
+    if(exportFormat==="webm") result=await encodeWatchable(exportItem,"webm");
+    else if(exportFormat==="mp4") result=await encodeWatchable(exportItem,"mp4");
+
+    if(result){
+      const url=URL.createObjectURL(result.blob);
+      const base=(exportItem.title||"vanta-master").replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
+      const a=document.createElement("a");
+      a.href=url;
+      a.download=base+"-"+exportItem.duration+"s."+result.ext;
+      document.body.appendChild(a);a.click();a.remove();
+      setGallery(g=>g.map(x=>x.id===exportItem.id?Object.assign({},x,{isVideo:true,src:url,generated:true}):x));
+      setExportItem(null);
+      toastMsg(setToast,"Watchable "+(result.ext==="mp4"?"MP4 H.264":"WebM")+" downloaded successfully.");
+      return;
+    }
+
+    // If the browser cannot natively encode the requested container,
+    // create a real browser-supported source and let FFmpeg make the exact target.
+    const source=await encodeWatchable(exportItem,"mp4") || await encodeWatchable(exportItem,"webm");
+    if(!source) throw new Error("This browser cannot encode a video locally. Connect the FFmpeg server.");
+    const output=await requestTranscode(source.blob,"vanta-master."+source.ext,exportFormat);
+    const url=URL.createObjectURL(output);
+    const base=(exportItem.title||"vanta-master").replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
+    const a=document.createElement("a");
+    a.href=url;
+    a.download=base+"-"+exportItem.duration+"s."+selected.ext;
+    document.body.appendChild(a);a.click();a.remove();
+    setExportItem(null);
+    toastMsg(setToast,"Real "+selected.name+" video downloaded successfully.");
   }catch(e){
-   console.error(e);
-   toastMsg(setToast,e.message.includes("FFmpeg")?
-    "This format requires the production FFmpeg transcoder. WebM remains available as a watchable download.":
-    "Video export failed. Try Chrome or Edge for WebM.");
+    console.error("VANTA export:",e);
+    toastMsg(setToast,e.message||"Video export failed.");
   }
  }
  return h("div",{className:"min-h-screen"},
@@ -287,7 +354,7 @@ function ExportModal({item,format,setFormat,quality,setQuality,onClose,onExport}
     h("div",{className:"grid sm:grid-cols-2 gap-2"},formats.map(f=>h("button",{key:f.id,onClick:()=>setFormat(f.id),className:"text-left p-3 rounded-xl border "+(format===f.id?"border-violet-400/40 bg-violet-500/10":"border-white/5 bg-white/[.02]")},h("div",{className:"text-xs font-semibold"},f.name),h("div",{className:"text-[8px] text-zinc-600 mt-1"},f.detail)))),
     h("div",{className:"text-[9px] uppercase tracking-widest text-zinc-600 mt-5 mb-2"},"Quality"),
     h("div",{className:"grid grid-cols-3 gap-2"},["Standard","High","Extreme"].map(q=>h("button",{key:q,onClick:()=>setQuality(q),className:"py-3 rounded-xl border text-[9px] "+(quality===q?"border-violet-400/40 bg-violet-500/10":"border-white/5")},q))),
-    h("div",{className:"card rounded-xl p-3 mt-5 text-[9px] text-zinc-500"},format==="webm"?"WebM is encoded as a genuine browser-playable video in this browser.":"This format is downloaded only after genuine FFmpeg transcoding. The app never changes a .webm extension into a fake container."),
+    h("div",{className:"card rounded-xl p-3 mt-5 text-[9px] text-zinc-500"},format==="webm"?"WebM is encoded natively when this browser supports it; otherwise the app uses the FFmpeg transcoder.":"This format is created by genuine FFmpeg transcoding; the app never fakes a container by changing a file extension."),
     h("div",{className:"text-[8px] text-zinc-700 mt-3 text-center"},"MP4 / HEVC / ProRes / MKV / AVI require the /api/transcode FFmpeg endpoint. WebM works entirely in-browser."),
     h("button",{onClick:onExport,className:"w-full mt-4 py-3.5 rounded-xl bg-violet-500 hover:bg-violet-400 text-sm font-semibold"},"Download Watchable Video")
    )
