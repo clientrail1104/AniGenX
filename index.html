@@ -27,6 +27,9 @@
     }
   </script>
 
+  <!-- Babel Standalone enables JSX in this single-file build -->
+  <script src="https://unpkg.com/@babel/standalone@7.26.0/babel.min.js"></script>
+
   <!-- React + Lucide React -->
   <script type="importmap">
   {
@@ -93,6 +96,14 @@
     .indeterminate::after {
       content:""; display:block; width:32%; height:100%; background:#a78bfa; animation:bar 1.15s ease-in-out infinite;
     }
+
+    .hero-orbit { position:relative; overflow:hidden; background:radial-gradient(circle at 78% 28%,rgba(139,92,246,.24),transparent 26%),radial-gradient(circle at 22% 78%,rgba(56,189,248,.10),transparent 25%),linear-gradient(135deg,rgba(255,255,255,.045),rgba(255,255,255,.012)); }
+    .hero-orbit:before,.hero-orbit:after { content:"";position:absolute;border:1px solid rgba(167,139,250,.14);border-radius:999px;pointer-events:none; }
+    .hero-orbit:before { width:430px;height:430px;right:-100px;top:-180px;box-shadow:0 0 80px rgba(139,92,246,.08); }
+    .hero-orbit:after { width:260px;height:260px;right:35px;top:-90px; }
+    .metric-card { background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018));border:1px solid rgba(255,255,255,.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.035); }
+    .mini-grid { background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:18px 18px; }
+    .step-dot { box-shadow:0 0 0 5px rgba(139,92,246,.08),0 0 25px rgba(139,92,246,.35); }
     .modal-backdrop { background: rgba(0,0,0,.72); backdrop-filter: blur(10px); }
   </style>
 </head>
@@ -100,7 +111,7 @@
 <body class="noise">
 <div id="root"></div>
 
-<script type="module">
+<script type="text/babel" data-type="module">
 import React, { useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
@@ -396,6 +407,26 @@ function App() {
             </div>
           </div>
 
+
+          <section className="hero-orbit rounded-3xl border border-white/7 p-5 lg:p-6 mb-6">
+            <div className="relative z-10 grid xl:grid-cols-[1fr_430px] gap-6 items-center">
+              <div>
+                <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-violet-500/10 border border-violet-400/15 text-[9px] uppercase tracking-[.2em] text-violet-200 mb-4"><Sparkles className="w-3 h-3"/> Generative Motion Intelligence</div>
+                <h2 className="text-xl lg:text-2xl font-semibold tracking-tight">Turn a single image into a <span className="text-violet-300">cinematic sequence.</span></h2>
+                <p className="text-xs text-zinc-500 mt-2 max-w-xl leading-5">Compose camera dynamics, visual identity and AI upscaling from one precision control surface.</p>
+                <div className="flex flex-wrap gap-2 mt-5">
+                  {[['01','Analyze','Structure'],['02','Animate','Motion'],['03','Upscale','Ultra-HD'],['04','Master','Export']].map(([n,a,b],i)=>(<div key={n} className="flex items-center"><div className="metric-card rounded-xl px-3 py-2.5 min-w-[92px]"><div className="flex items-center gap-2"><span className="step-dot w-2 h-2 rounded-full bg-violet-400"></span><span className="text-[8px] font-mono text-violet-300">{n}</span></div><div className="text-[10px] font-semibold mt-2">{a}</div><div className="text-[8px] text-zinc-600">{b}</div></div>{i<3 && <div className="w-3 h-px bg-white/10 mx-1"/>}</div>))}
+                </div>
+              </div>
+              <div className="mini-grid rounded-2xl border border-white/6 p-4 relative min-h-[190px]">
+                <div className="absolute top-3 left-3 text-[8px] uppercase tracking-[.2em] text-zinc-600">Engine Telemetry</div>
+                <div className="absolute top-3 right-3 flex items-center gap-1.5 text-[8px] text-emerald-400"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-glow"></span> ONLINE</div>
+                <div className="absolute inset-0 flex items-center justify-center"><div className="w-32 h-32 rounded-full border border-violet-400/15 flex items-center justify-center relative"><div className="absolute inset-4 rounded-full border border-violet-400/10"></div><div className="absolute inset-8 rounded-full bg-violet-500/10 border border-violet-400/20 flex flex-col items-center justify-center"><Sparkles className="w-5 h-5 text-violet-300 mb-1"/><div className="text-lg font-semibold">AI</div><div className="text-[7px] tracking-widest text-zinc-600">MOTION CORE</div></div><div className="absolute w-2 h-2 bg-violet-300 rounded-full top-0 left-1/2 -translate-x-1/2 shadow-glow"></div></div></div>
+                <div className="absolute bottom-3 left-3 right-3 grid grid-cols-3 gap-2"><div><div className="text-[8px] text-zinc-600">LATENCY</div><div className="text-xs font-mono">12ms</div></div><div><div className="text-[8px] text-zinc-600">QUALITY</div><div className="text-xs font-mono">99.8%</div></div><div><div className="text-[8px] text-zinc-600">UPSCALE</div><div className="text-xs font-mono">8×</div></div></div>
+              </div>
+            </div>
+          </section>
+
           <section className="mb-9">
             <div className="flex items-center justify-between mb-3">
               <SectionTitle icon={<Gauge/>} title="Active Queue Manager" />
@@ -532,6 +563,7 @@ function VideoCard({asset,onExport}) {
           <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur flex items-center justify-center border border-white/10"><Play className="w-3.5 h-3.5 fill-white"/></div>
         </div>
       </div>
+      <div className="px-3 pt-2.5 flex items-center gap-2 text-[8px] uppercase tracking-widest text-zinc-700"><span className="w-1 h-1 rounded-full bg-violet-400"></span>{asset.preset}<span>·</span>Temporal Master<span>·</span>{asset.resolution}</div>
       <div className="p-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-[9px] text-zinc-600"><BadgeCheck className="w-3.5 h-3.5 text-emerald-500"/> AI Master</div>
         <button onClick={onExport} className="px-3 py-2 rounded-lg bg-white/[.05] hover:bg-violet-500/15 border border-white/5 hover:border-violet-400/25 text-[10px] font-medium flex items-center gap-1.5"><Download className="w-3.5 h-3.5"/> Export Asset</button>
