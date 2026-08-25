@@ -33,12 +33,12 @@ const h=React.createElement;
 const {useState,useMemo,useRef,useEffect}=React;
 
 const formats=[
- {id:"webm",name:"WebM",detail:"VP9 / browser-native playable",ext:"webm"},
- {id:"mp4",name:"MP4 H.264",detail:"Production delivery",ext:"mp4"},
- {id:"hevc",name:"MP4 HEVC",detail:"High efficiency",ext:"mp4"},
- {id:"prores",name:"MOV ProRes",detail:"Master editing",ext:"mov"},
- {id:"mkv",name:"MKV",detail:"Container master",ext:"mkv"},
- {id:"avi",name:"AVI",detail:"Legacy production",ext:"avi"}
+ {id:"webm",name:"WebM",detail:"VP9 · browser encoded · watchable",ext:"webm",native:true},
+ {id:"mp4",name:"MP4 H.264",detail:"H.264 · FFmpeg transcoded · watchable",ext:"mp4",native:false},
+ {id:"hevc",name:"MP4 HEVC",detail:"HEVC · FFmpeg transcoded · watchable",ext:"mp4",native:false},
+ {id:"prores",name:"MOV ProRes",detail:"ProRes · FFmpeg transcoded · watchable",ext:"mov",native:false},
+ {id:"mkv",name:"MKV",detail:"MKV/H.264 · FFmpeg transcoded · watchable",ext:"mkv",native:false},
+ {id:"avi",name:"AVI",detail:"AVI/H.264 · FFmpeg transcoded · watchable",ext:"avi",native:false}
 ];
 const presets=[
  ["Cinematic","Anamorphic / Film Grain","◒"],["Anime","Shinkai Style","✦"],["3D Render","Unreal Engine 5","◇"],
@@ -131,22 +131,47 @@ function App(){
  async function exportNow(){
   if(!exportItem)return;
   try{
-   // WebM is the genuinely browser-encoded/watchable format.
-   // For other requested containers, download a real WebM only when necessary
-   // rather than creating a corrupt file with a false extension.
-   const blob=await encodeWatchable(exportItem);
-   const url=URL.createObjectURL(blob);
-   const base=(exportItem.title||"vanta-master").replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
-   const requested=formats.find(x=>x.id===exportFormat);
-   const ext=exportFormat==="webm"?"webm":"webm";
-   const a=document.createElement("a");a.href=url;a.download=base+"-"+exportItem.duration+"s."+ext;
-   document.body.appendChild(a);a.click();a.remove();
-   setGallery(g=>g.map(x=>x.id===exportItem.id?Object.assign({},x,{isVideo:true,src:url,generated:true}):x));
-   setExportItem(null);
-   toastMsg(setToast,exportFormat==="webm"?"Watchable WebM downloaded.":"Watchable WebM downloaded. Exact "+requested.name+" transcoding requires FFmpeg/server encoding.");
-  }catch(e){console.error(e);toastMsg(setToast,"Video export failed. Please use Chrome or Edge.")}
- }
+   const selected=formats.find(x=>x.id===exportFormat);
+   // First produce a real browser-encoded WebM master.
+   const webmBlob=await encodeWatchable(exportItem);
 
+   if(exportFormat==="webm"){
+    const url=URL.createObjectURL(webmBlob);
+    const base=(exportItem.title||"vanta-master").replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
+    const a=document.createElement("a");a.href=url;a.download=base+"-"+exportItem.duration+"s.webm";
+    document.body.appendChild(a);a.click();a.remove();
+    setGallery(g=>g.map(x=>x.id===exportItem.id?Object.assign({},x,{isVideo:true,src:url,generated:true}):x));
+    setExportItem(null);
+    toastMsg(setToast,"Real watchable WebM downloaded successfully.");
+    return;
+   }
+
+   // Never rename WebM bytes to another container: that creates corrupt/unwatchable files.
+   // A production server must transcode the real WebM with FFmpeg.
+   const fd=new FormData();
+   fd.append("video",webmBlob,"vanta-master.webm");
+   fd.append("format",exportFormat);
+   fd.append("quality",exportQuality);
+   fd.append("filename",(exportItem.title||"vanta-master"));
+   fd.append("duration",String(exportItem.duration));
+
+   const response=await fetch("/api/transcode",{method:"POST",body:fd});
+   if(!response.ok) throw new Error("FFmpeg transcoding endpoint is unavailable.");
+   const output=await response.blob();
+   const mime=output.type||"application/octet-stream";
+   const url=URL.createObjectURL(new Blob([output],{type:mime}));
+   const base=(exportItem.title||"vanta-master").replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
+   const a=document.createElement("a");a.href=url;a.download=base+"-"+exportItem.duration+"s."+selected.ext;
+   document.body.appendChild(a);a.click();a.remove();
+   setExportItem(null);
+   toastMsg(setToast,"Real "+selected.name+" video downloaded.");
+  }catch(e){
+   console.error(e);
+   toastMsg(setToast,e.message.includes("FFmpeg")?
+    "This format requires the production FFmpeg transcoder. WebM remains available as a watchable download.":
+    "Video export failed. Try Chrome or Edge for WebM.");
+  }
+ }
  return h("div",{className:"min-h-screen"},
   h("header",{className:"sticky top-0 z-40 h-[70px] border-b border-white/5 glass"},
    h("div",{className:"max-w-[1800px] mx-auto h-full px-5 flex items-center justify-between"},
@@ -262,7 +287,8 @@ function ExportModal({item,format,setFormat,quality,setQuality,onClose,onExport}
     h("div",{className:"grid sm:grid-cols-2 gap-2"},formats.map(f=>h("button",{key:f.id,onClick:()=>setFormat(f.id),className:"text-left p-3 rounded-xl border "+(format===f.id?"border-violet-400/40 bg-violet-500/10":"border-white/5 bg-white/[.02]")},h("div",{className:"text-xs font-semibold"},f.name),h("div",{className:"text-[8px] text-zinc-600 mt-1"},f.detail)))),
     h("div",{className:"text-[9px] uppercase tracking-widest text-zinc-600 mt-5 mb-2"},"Quality"),
     h("div",{className:"grid grid-cols-3 gap-2"},["Standard","High","Extreme"].map(q=>h("button",{key:q,onClick:()=>setQuality(q),className:"py-3 rounded-xl border text-[9px] "+(quality===q?"border-violet-400/40 bg-violet-500/10":"border-white/5")},q))),
-    h("div",{className:"card rounded-xl p-3 mt-5 text-[9px] text-zinc-500"},format==="webm"?"WebM is encoded as a genuine browser-playable video.":"This prototype still produces a genuine WebM because browsers cannot safely create arbitrary H.264/HEVC/ProRes/AVI/MKV containers by extension alone. Exact multi-container transcoding should be done with FFmpeg/WASM or a server encoder."),
+    h("div",{className:"card rounded-xl p-3 mt-5 text-[9px] text-zinc-500"},format==="webm"?"WebM is encoded as a genuine browser-playable video in this browser.":"This format is downloaded only after genuine FFmpeg transcoding. The app never changes a .webm extension into a fake container."),
+    h("div",{className:"text-[8px] text-zinc-700 mt-3 text-center"},"MP4 / HEVC / ProRes / MKV / AVI require the /api/transcode FFmpeg endpoint. WebM works entirely in-browser."),
     h("button",{onClick:onExport,className:"w-full mt-4 py-3.5 rounded-xl bg-violet-500 hover:bg-violet-400 text-sm font-semibold"},"Download Watchable Video")
    )
   )
