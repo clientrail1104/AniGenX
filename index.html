@@ -100,6 +100,31 @@ function App(){
   },6000);
  }
 
+
+ function analyzePrompt(text){
+   const s=(text||"").toLowerCase();
+   const has=(...words)=>words.some(w=>s.includes(w));
+   return {
+    zoom:has("zoom","push in","push-in","dolly in","close up","close-up"),
+    zoomOut:has("zoom out","pull out","pull-out","dolly out"),
+    panLeft:has("pan left","move left","camera left","slide left"),
+    panRight:has("pan right","move right","camera right","slide right"),
+    tiltUp:has("tilt up","move up","rise","rising","camera upward"),
+    tiltDown:has("tilt down","move down","descend","falling","camera downward"),
+    orbit:has("orbit","orbital","circle around","360","rotate around"),
+    rollCW:has("roll clockwise","clockwise roll","roll right"),
+    rollCCW:has("roll counterclockwise","counter-clockwise","counterclockwise","roll left"),
+    sway:has("sway","swaying","wind","breeze","flowing"),
+    shake:has("shake","handheld","impact","vibration","tremble"),
+    parallax:has("parallax","depth","3d depth","layered"),
+    cinematic:has("cinematic","film","anamorphic","movie"),
+    night:has("night","dark","moonlight"),
+    warm:has("warm","sunset","golden hour","golden-hour"),
+    cool:has("cool","blue light","icy"),
+    vignette:has("vignette","dramatic lighting")
+   };
+ }
+ function promptMotion(item){ return analyzePrompt((item.prompt||"")+" "+(prompt||"")); }
  async function encodeWatchable(item, preferredFormat){
   if(!item.src || !item.src.startsWith("data:image/")) throw new Error("This gallery item has no source image. Generate a new master first.");
 
