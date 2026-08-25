@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VANTA Motion — Image-to-Video AI Engine</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: "#08090d",
+            panel: "#0e1016",
+            panel2: "#13151d",
+            violetx: "#8b5cf6",
+            violet2: "#a78bfa"
+          },
+          boxShadow: {
+            glow: "0 0 45px rgba(139,92,246,.16)",
+            glowStrong: "0 0 60px rgba(139,92,246,.25)"
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React + Lucide React -->
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@18.3.1",
+      "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+      "lucide-react": "https://esm.sh/lucide-react@0.468.0?deps=react@18.3.1"
+    }
+  }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body, #root { min-height: 100%; }
+    body {
+      margin: 0;
+      background: #08090d;
+      color: #f4f4f5;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    ::selection { background: rgba(139,92,246,.35); }
+    .noise {
+      background-image:
+        radial-gradient(circle at 15% 10%, rgba(139,92,246,.09), transparent 28%),
+        radial-gradient(circle at 90% 20%, rgba(99,102,241,.06), transparent 25%),
+        linear-gradient(rgba(255,255,255,.012) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.012) 1px, transparent 1px);
+      background-size: auto, auto, 32px 32px, 32px 32px;
+    }
+    .glass {
+      background: rgba(14,16,22,.78);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    .scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .scrollbar::-webkit-scrollbar-thumb { background: #27272f; border-radius: 999px; }
+    .scrollbar::-webkit-scrollbar-track { background: transparent; }
+    input[type=range] {
+      appearance: none; width: 100%; height: 5px; border-radius: 999px;
+      background: linear-gradient(90deg, #8b5cf6 var(--value), #27272f var(--value));
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      appearance: none; width: 18px; height: 18px; border-radius: 50%;
+      background: #fafafa; border: 3px solid #8b5cf6; box-shadow: 0 0 18px rgba(139,92,246,.55);
+      cursor: pointer;
+    }
+    input[type=range]::-moz-range-thumb {
+      width: 18px; height: 18px; border-radius: 50%; background: #fafafa;
+      border: 3px solid #8b5cf6; cursor: pointer;
+    }
+    .drop-active { border-color: #8b5cf6 !important; background: rgba(139,92,246,.10) !important; }
+    .shine::after {
+      content:""; position:absolute; inset:0; transform:translateX(-110%);
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);
+      animation: shine 2.3s infinite;
+    }
+    @keyframes shine { to { transform:translateX(110%); } }
+    @keyframes pulseGlow { 0%,100%{opacity:.5} 50%{opacity:1} }
+    .pulse-glow { animation:pulseGlow 1.8s ease-in-out infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes bar { from{transform:translateX(-100%)} to{transform:translateX(420%)} }
+    .indeterminate::after {
+      content:""; display:block; width:32%; height:100%; background:#a78bfa; animation:bar 1.15s ease-in-out infinite;
+    }
+    .modal-backdrop { background: rgba(0,0,0,.72); backdrop-filter: blur(10px); }
+  </style>
+</head>
+
+<body class="noise">
+<div id="root"></div>
+
+<script type="module">
+import React, { useMemo, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
+import {
+  Activity, AlertCircle, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUp,
+  BadgeCheck, Box, Camera, Check, ChevronDown, Clapperboard, CloudUpload,
+  Download, Film, Gauge, Image as ImageIcon, Layers3, Maximize2, Move3d,
+  Play, Plus, RefreshCw, RotateCcw, RotateCw, Sparkles, Trash2, Upload,
+  WandSparkles, X, ZoomIn, ZoomOut
+} from "lucide-react";
+
+const ACCEPTED = ["png","jpg","jpeg","webp","heic","tiff","tif","psd","bmp","svg"];
+
+const presets = [
+  { id:"cinematic", name:"Cinematic", sub:"Anamorphic / Film Grain", icon:"◒", tone:"from-amber-300/20 to-orange-500/5" },
+  { id:"anime", name:"Anime", sub:"Shinkai Style", icon:"✦", tone:"from-sky-400/20 to-indigo-500/5" },
+  { id:"3d", name:"3D Render", sub:"Unreal Engine 5", icon:"◇", tone:"from-cyan-400/20 to-blue-500/5" },
+  { id:"cyberpunk", name:"Cyberpunk", sub:"Neon / Volumetric Lighting", icon:"⌁", tone:"from-fuchsia-400/20 to-violet-500/5" },
+  { id:"photo", name:"Photorealistic", sub:"8K / Studio Lighting", icon:"◉", tone:"from-emerald-400/20 to-teal-500/5" },
+  { id:"clay", name:"Claymation", sub:"Stop-Motion / Texture", icon:"●", tone:"from-rose-300/20 to-orange-500/5" }
+];
+
+const cameraPaths = [
+  ["panL","Pan Left",ArrowLeft], ["panR","Pan Right",ArrowRight],
+  ["tiltU","Tilt Up",ArrowUp], ["tiltD","Tilt Down",ArrowDownRight],
+  ["zoomIn","Deep Zoom In",ZoomIn], ["zoomOut","Deep Zoom Out",ZoomOut],
+  ["rollCW","Roll Clockwise",RotateCw], ["rollCCW","Roll Counter",RotateCcw]
+];
+
+const qualityMap = { Standard: 0.65, High: 1.0, "Extreme Master Quality": 1.8 };
+const formatMap = {
+  "MP4 (H.264)": { base: 18, ext:"mp4" },
+  "MP4 (ProRes/HEVC)": { base: 42, ext:"mp4" },
+  "WebM (Transparent/Lossless)": { base: 26, ext:"webm" },
+  "AVI (Uncompressed)": { base: 125, ext:"avi" },
+  "MKV": { base: 31, ext:"mkv" }
+};
+
+function App() {
+  const [file, setFile] = useState(null);
+  const [fileStatus, setFileStatus] = useState("idle");
+  const [drag, setDrag] = useState(false);
+  const [motion, setMotion] = useState(64);
+  const [paths, setPaths] = useState(["panR","zoomIn"]);
+  const [preset, setPreset] = useState("cinematic");
+  const [resolution, setResolution] = useState("4K");
+  const [credits, setCredits] = useState(12);
+  const [queue, setQueue] = useState([]);
+  const [gallery, setGallery] = useState([
+    { id:"demo-1", title:"Neon Atelier", preset:"Cyberpunk", resolution:"4K", duration:"06.0s", src:"https://cdn.coverr.co/videos/coverr-a-woman-walking-in-a-neon-lit-city-1577/1080p.mp4" },
+    { id:"demo-2", title:"Golden Horizon", preset:"Cinematic", resolution:"8K", duration:"06.0s", src:"https://cdn.coverr.co/videos/coverr-aerial-view-of-a-coastline-1572/1080p.mp4" },
+    { id:"demo-3", title:"Quiet Architecture", preset:"Photorealistic", resolution:"4K", duration:"06.0s", src:"https://cdn.coverr.co/videos/coverr-modern-building-exterior-1575/1080p.mp4" }
+  ]);
+  const [modal, setModal] = useState(null);
+  const [exportFormat, setExportFormat] = useState("MP4 (H.264)");
+  const [exportQuality, setExportQuality] = useState("High");
+  const [toast, setToast] = useState("");
+  const inputRef = useRef(null);
+
+  const estimatedSize = useMemo(() => {
+    if (!modal) return 0;
+    const f = formatMap[exportFormat];
+    const resMultiplier = modal.resolution === "8K" ? 2.15 : modal.resolution === "4K" ? 1.45 : .85;
+    return Math.max(8, Math.round(f.base * qualityMap[exportQuality] * resMultiplier * 0.6));
+  }, [modal, exportFormat, exportQuality]);
+
+  const notify = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), 2600);
+  };
+
+  const ingest = (picked) => {
+    if (!picked) return;
+    const ext = (picked.name.split(".").pop() || "").toLowerCase();
+    if (!ACCEPTED.includes(ext)) {
+      notify("Unsupported image format. Use PNG, JPG, WEBP, HEIC, TIFF, PSD, BMP, or SVG.");
+      return;
+    }
+    setFileStatus("loading");
+    const reader = new FileReader();
+    reader.onload = () => {
+      setTimeout(() => {
+        setFile({ name:picked.name, size:picked.size, ext, url:reader.result });
+        setFileStatus("ready");
+      }, 650);
+    };
+    reader.onerror = () => {
+      setFileStatus("idle");
+      notify("Could not read this file.");
+    };
+    reader.readAsDataURL(picked);
+  };
+
+  const togglePath = (id) => setPaths(p => p.includes(id) ? p.filter(x=>x!==id) : [...p,id]);
+
+  const generate = () => {
+    if (!file) {
+      notify("Add an image before generating a video.");
+      return;
+    }
+    if (!ACCEPTED.includes(file.ext)) {
+      notify("This image format is not supported.");
+      return;
+    }
+    if (credits <= 0) {
+      notify("No render credits remaining.");
+      return;
+    }
+
+    const id = crypto.randomUUID();
+    const title = file.name.replace(/\.[^/.]+$/, "").slice(0, 28) || "Untitled Motion";
+    setCredits(c => c - 1);
+    setQueue(q => [...q, {
+      id, title, started:Date.now(), progress:0, step:"Analyzing Image Structure...",
+      preset:presets.find(p=>p.id===preset)?.name || "Cinematic",
+      resolution, src:file.url
+    }]);
+
+    const steps = [
+      [0, "Analyzing Image Structure..."],
+      [18, "Mapping Depth & Subject Geometry..."],
+      [38, "Injecting Motion..."],
+      [61, "Synthesizing Temporal Frames..."],
+      [82, `Upscaling to Ultra-HD ${resolution}...`],
+      [96, "Finalizing Master Asset..."]
+    ];
+
+    steps.forEach(([at, step]) => {
+      setTimeout(() => setQueue(q => q.map(x => x.id===id ? {...x, progress:at, step} : x)), at * 60);
+    });
+
+    setTimeout(() => {
+      setQueue(q => q.filter(x => x.id !== id));
+      setGallery(g => [{
+        id, title, preset:presets.find(p=>p.id===preset)?.name || "Cinematic",
+        resolution, duration:"06.0s", src:file.url
+      }, ...g]);
+      notify("Render complete — master asset added to gallery.");
+    }, 6000);
+  };
+
+  const exportAsset = () => {
+    const blob = new Blob(
+      [`VANTA Motion export simulation\nAsset: ${modal.title}\nFormat: ${exportFormat}\nQuality: ${exportQuality}\nEstimated size: ${estimatedSize} MB`],
+      { type:"text/plain" }
+    );
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${modal.title.replace(/\s+/g,"-").toLowerCase()}.${formatMap[exportFormat].ext}.txt`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setModal(null);
+    notify(`Export simulation prepared — ${estimatedSize} MB ${formatMap[exportFormat].ext.toUpperCase()}.`);
+  };
+
+  return (
+    <div className="min-h-screen bg-ink text-zinc-100">
+      <header className="h-[72px] border-b border-white/5 bg-[#090a0f]/90 glass sticky top-0 z-30">
+        <div className="h-full max-w-[1800px] mx-auto px-5 lg:px-7 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-400/20 flex items-center justify-center shadow-glow">
+              <Clapperboard className="w-5 h-5 text-violet-300"/>
+            </div>
+            <div>
+              <div className="font-semibold tracking-[.18em] text-sm">VANTA<span className="text-violet-400">/</span>MOTION</div>
+              <div className="text-[10px] text-zinc-500 tracking-[.22em] uppercase">Image-to-Video AI Engine</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[.035] border border-white/5 text-xs">
+              <Sparkles className="w-3.5 h-3.5 text-violet-400"/>
+              <span className="text-zinc-400">Render Credits</span>
+              <b className="text-white">{credits}</b>
+            </div>
+            <button onClick={() => notify("Account console is available in the production build.")} className="w-9 h-9 rounded-full bg-zinc-800 border border-white/10 text-xs font-semibold">SF</button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-[1800px] mx-auto grid lg:grid-cols-[390px_1fr] min-h-[calc(100vh-72px)]">
+        <aside className="border-r border-white/5 bg-[#0b0c11] p-5 lg:p-6 lg:sticky lg:top-[72px] lg:h-[calc(100vh-72px)] overflow-y-auto scrollbar">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <div className="text-sm font-semibold">Generation Controls</div>
+              <div className="text-xs text-zinc-500 mt-1">Build your motion recipe.</div>
+            </div>
+            <button onClick={() => {setFile(null);setFileStatus("idle");setPaths(["panR","zoomIn"]);setMotion(64);setPreset("cinematic");setResolution("4K")}} className="p-2 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-white" title="Reset controls"><RefreshCw className="w-4 h-4"/></button>
+          </div>
+
+          <section className="mb-7">
+            <SectionTitle icon={<Upload/>} title="01 / Source Image" />
+            <div
+              onClick={() => inputRef.current?.click()}
+              onDragOver={e => {e.preventDefault();setDrag(true)}}
+              onDragLeave={() => setDrag(false)}
+              onDrop={e => {e.preventDefault();setDrag(false);ingest(e.dataTransfer.files?.[0])}}
+              className={`relative overflow-hidden min-h-[164px] rounded-2xl border border-dashed border-zinc-700 bg-zinc-900/45 hover:bg-zinc-900/75 hover:border-violet-500/50 transition-all cursor-pointer flex flex-col items-center justify-center text-center p-5 ${drag ? "drop-active" : ""}`}
+            >
+              <input ref={inputRef} type="file" hidden accept=".png,.jpg,.jpeg,.webp,.heic,.tiff,.tif,.psd,.bmp,.svg,image/*" onChange={e => ingest(e.target.files?.[0])}/>
+              {fileStatus === "loading" ? (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-violet-500/15 flex items-center justify-center"><RefreshCw className="w-5 h-5 text-violet-300 spin"/></div>
+                  <div className="text-xs text-zinc-300">Reading source asset…</div>
+                  <div className="w-36 h-1 bg-zinc-800 rounded-full overflow-hidden indeterminate"/>
+                </div>
+              ) : file ? (
+                <div className="w-full">
+                  <div className="relative aspect-[16/9] rounded-xl overflow-hidden bg-black border border-white/10 mb-3">
+                    {file.ext === "svg" ? <img src={file.url} className="w-full h-full object-contain"/> : <img src={file.url} className="w-full h-full object-cover"/>}
+                    <div className="absolute top-2 left-2 px-2 py-1 rounded-md bg-black/65 text-[9px] uppercase tracking-widest">{file.ext}</div>
+                    <button onClick={e => {e.stopPropagation();setFile(null);setFileStatus("idle")}} className="absolute top-2 right-2 p-1.5 rounded-md bg-black/70 hover:bg-red-500/80"><X className="w-3.5 h-3.5"/></button>
+                  </div>
+                  <div className="text-left">
+                    <div className="text-xs font-medium truncate">{file.name}</div>
+                    <div className="text-[10px] text-zinc-500 mt-1">{(file.size/1024/1024).toFixed(2)} MB · Crop helper 16:9</div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="w-11 h-11 rounded-xl bg-violet-500/10 border border-violet-500/15 flex items-center justify-center mb-3"><CloudUpload className="w-5 h-5 text-violet-300"/></div>
+                  <div className="text-xs font-medium">Drop any image asset here</div>
+                  <div className="text-[10px] text-zinc-500 mt-1">PNG · JPG · WEBP · HEIC · TIFF · PSD · BMP · SVG</div>
+                  <div className="mt-4 text-[10px] text-violet-300 uppercase tracking-widest">Browse source</div>
+                </>
+              )}
+            </div>
+          </section>
+
+          <section className="mb-7">
+            <SectionTitle icon={<Activity/>} title="02 / Motion Dynamics" />
+            <div className="rounded-2xl border border-white/5 bg-white/[.025] p-4">
+              <div className="flex justify-between text-xs mb-4">
+                <span className="text-zinc-400">Motion Intensity</span>
+                <span className="font-semibold text-violet-300">{motion}<span className="text-zinc-600"> / 100</span></span>
+              </div>
+              <input type="range" min="1" max="100" value={motion} style={{"--value":`${motion}%`}} onChange={e=>setMotion(+e.target.value)}/>
+              <div className="flex justify-between text-[9px] text-zinc-600 mt-2 uppercase tracking-widest"><span>Subtle</span><span>Dynamic</span><span>Extreme</span></div>
+            </div>
+          </section>
+
+          <section className="mb-7">
+            <SectionTitle icon={<Camera/>} title="03 / Directional Camera Array" />
+            <div className="grid grid-cols-2 gap-2">
+              {cameraPaths.map(([id,label,Icon]) => (
+                <button key={id} onClick={()=>togglePath(id)} className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[10px] transition ${paths.includes(id) ? "bg-violet-500/12 border-violet-400/40 text-violet-200 shadow-glow" : "bg-white/[.02] border-white/5 text-zinc-500 hover:text-zinc-200 hover:bg-white/[.04]"}`}>
+                  <Icon className="w-3.5 h-3.5"/><span>{label}</span>
+                  {paths.includes(id) && <Check className="w-3 h-3 ml-auto"/>}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="mb-7">
+            <SectionTitle icon={<WandSparkles/>} title="04 / Premium Style Presets" />
+            <div className="grid grid-cols-2 gap-2">
+              {presets.map(p => (
+                <button key={p.id} onClick={()=>setPreset(p.id)} className={`relative overflow-hidden text-left p-3 rounded-xl border transition bg-gradient-to-br ${p.tone} ${preset===p.id ? "border-violet-400/55 ring-1 ring-violet-400/15" : "border-white/5 hover:border-white/15"}`}>
+                  <div className={`text-xl mb-2 ${preset===p.id ? "text-violet-200" : "text-zinc-400"}`}>{p.icon}</div>
+                  <div className="text-[11px] font-semibold">{p.name}</div>
+                  <div className="text-[9px] text-zinc-500 mt-1 leading-3">{p.sub}</div>
+                  {preset===p.id && <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center"><Check className="w-2.5 h-2.5"/></div>}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="mb-6">
+            <SectionTitle icon={<Maximize2/>} title="05 / Resolution Target" />
+            <div className="grid grid-cols-3 gap-2">
+              {["HD","4K","8K"].map(r => (
+                <button key={r} onClick={()=>setResolution(r)} className={`py-3 rounded-xl border text-xs font-semibold ${resolution===r ? "bg-violet-500/15 border-violet-400/45 text-violet-200" : "bg-white/[.02] border-white/5 text-zinc-500 hover:text-white"}`}>
+                  {r}{r==="8K" && <span className="block text-[8px] text-zinc-500 font-normal mt-1">AI UPSCALE</span>}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <button onClick={generate} className="w-full relative overflow-hidden shine rounded-2xl bg-violet-500 hover:bg-violet-400 text-white py-4 text-sm font-semibold shadow-glowStrong transition">
+            <span className="relative z-10 flex items-center justify-center gap-2"><Sparkles className="w-4 h-4"/> Generate Video <span className="text-violet-200/80 text-[10px]">· 1 credit</span></span>
+          </button>
+        </aside>
+
+        <section className="min-w-0 p-5 lg:p-8">
+          <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4 mb-7">
+            <div>
+              <div className="flex items-center gap-2 text-[10px] uppercase tracking-[.25em] text-violet-300 mb-2"><span className="w-1.5 h-1.5 rounded-full bg-violet-400 pulse-glow"/> Rendering Hub</div>
+              <h1 className="text-2xl lg:text-3xl font-semibold tracking-tight">Master Studio</h1>
+              <p className="text-sm text-zinc-500 mt-1">Monitor live generations and manage your finished motion assets.</p>
+            </div>
+            <div className="flex gap-2">
+              <Stat label="Active Jobs" value={queue.length}/>
+              <Stat label="Master Assets" value={gallery.length}/>
+              <Stat label="Target" value={resolution}/>
+            </div>
+          </div>
+
+          <section className="mb-9">
+            <div className="flex items-center justify-between mb-3">
+              <SectionTitle icon={<Gauge/>} title="Active Queue Manager" />
+              <span className="text-[10px] text-zinc-600 uppercase tracking-widest">{queue.length ? "Live pipeline" : "Standby"}</span>
+            </div>
+
+            {queue.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-white/7 bg-white/[.018] p-8 flex items-center gap-5">
+                <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-400/15 flex items-center justify-center"><Layers3 className="w-5 h-5 text-violet-300"/></div>
+                <div><div className="text-sm font-medium">No active renders</div><div className="text-xs text-zinc-600 mt-1">Your next generated sequence will appear here with live pipeline telemetry.</div></div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {queue.map(job => (
+                  <div key={job.id} className="relative overflow-hidden rounded-2xl border border-violet-500/15 bg-violet-500/[.035] p-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-10 rounded-lg overflow-hidden bg-black shrink-0 border border-white/10"><img src={job.src} className="w-full h-full object-cover"/></div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-xs font-medium truncate">{job.title}</div>
+                          <div className="text-[10px] text-violet-300 font-mono">{job.progress}%</div>
+                        </div>
+                        <div className="text-[10px] text-zinc-500 mt-1">{job.step}</div>
+                        <div className="mt-2 h-1.5 rounded-full bg-zinc-800 overflow-hidden"><div className="h-full rounded-full bg-violet-500 transition-all duration-500" style={{width:`${job.progress}%`}}/></div>
+                      </div>
+                      <div className="hidden sm:block text-right text-[9px] text-zinc-600 uppercase tracking-widest"><div>{job.resolution}</div><div className="mt-1">{job.preset}</div></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <SectionTitle icon={<Film/>} title="Master Video Gallery" />
+                <div className="text-xs text-zinc-600 mt-1 ml-7">Hover any master to preview · export losslessly</div>
+              </div>
+              <button onClick={()=>notify("Gallery is already synchronized.")} className="hidden sm:flex items-center gap-2 text-[10px] text-zinc-500 hover:text-white uppercase tracking-widest"><RefreshCw className="w-3.5 h-3.5"/> Sync</button>
+            </div>
+
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              {gallery.map(asset => <VideoCard key={asset.id} asset={asset} onExport={()=>{setModal(asset);setExportFormat("MP4 (H.264)");setExportQuality("High")}}/> )}
+            </div>
+          </section>
+
+          <div className="mt-10 rounded-2xl border border-white/5 bg-white/[.02] p-4 flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
+            <div className="flex items-center gap-3">
+              <BadgeCheck className="w-5 h-5 text-emerald-400"/>
+              <div><div className="text-xs font-medium">Production simulation environment</div><div className="text-[10px] text-zinc-600 mt-0.5">Client-side state · 6-second render pipeline · export test mode</div></div>
+            </div>
+            <div className="text-[10px] text-zinc-600 font-mono">VANTA ENGINE / LOCAL SESSION</div>
+          </div>
+        </section>
+      </main>
+
+      {modal && (
+        <div className="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4" onClick={()=>setModal(null)}>
+          <div onClick={e=>e.stopPropagation()} className="w-full max-w-xl rounded-3xl border border-white/10 bg-[#101117] shadow-2xl shadow-black/60 overflow-hidden">
+            <div className="px-6 py-5 border-b border-white/5 flex items-center justify-between">
+              <div><div className="text-sm font-semibold">Export Asset</div><div className="text-[10px] text-zinc-500 mt-1">{modal.title} · {modal.resolution} · 06.0s</div></div>
+              <button onClick={()=>setModal(null)} className="p-2 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-white"><X className="w-4 h-4"/></button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div>
+                <label className="text-[10px] uppercase tracking-widest text-zinc-500">Container / Codec</label>
+                <div className="mt-2 space-y-2">
+                  {Object.entries(formatMap).map(([name,info]) => (
+                    <button key={name} onClick={()=>setExportFormat(name)} className={`w-full flex items-center justify-between p-3 rounded-xl border text-left ${exportFormat===name ? "bg-violet-500/10 border-violet-400/40" : "bg-white/[.02] border-white/5 hover:border-white/10"}`}>
+                      <div><div className="text-xs font-medium">{name}</div><div className="text-[9px] text-zinc-600 mt-1">{name.includes("WebM") ? "Alpha channel where source supports transparency" : name.includes("AVI") ? "Maximum fidelity / very large files" : "High-quality production delivery"}</div></div>
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${exportFormat===name ? "border-violet-400 bg-violet-500" : "border-zinc-700"}`}>{exportFormat===name && <Check className="w-2.5 h-2.5"/>}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] uppercase tracking-widest text-zinc-500">Bitrate / Master Quality</label>
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  {Object.keys(qualityMap).map(q => <button key={q} onClick={()=>setExportQuality(q)} className={`p-3 rounded-xl border text-[10px] ${exportQuality===q ? "bg-violet-500/10 border-violet-400/40 text-violet-200" : "bg-white/[.02] border-white/5 text-zinc-500"}`}>{q}</button>)}
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-black/25 border border-white/5 p-4 flex items-center justify-between">
+                <div><div className="text-[10px] uppercase tracking-widest text-zinc-600">Estimated File Size</div><div className="text-2xl font-semibold mt-1">{estimatedSize} <span className="text-xs text-zinc-500">MB</span></div></div>
+                <div className="text-right text-[10px] text-zinc-600"><div>{exportFormat}</div><div className="mt-1">{exportQuality}</div></div>
+              </div>
+
+              <button onClick={exportAsset} className="w-full py-3.5 rounded-xl bg-violet-500 hover:bg-violet-400 font-semibold text-sm flex items-center justify-center gap-2"><Download className="w-4 h-4"/> Export Asset</button>
+              <div className="text-[9px] text-center text-zinc-700">Download is simulated client-side for this prototype.</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-5 right-5 z-[60] max-w-sm rounded-xl border border-violet-400/20 bg-[#15131d] shadow-glow px-4 py-3 flex items-center gap-3">
+          <AlertCircle className="w-4 h-4 text-violet-300 shrink-0"/>
+          <span className="text-xs text-zinc-200">{toast}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SectionTitle({icon,title}) {
+  return <div className="flex items-center gap-2 mb-3"><span className="text-violet-400 [&>svg]:w-3.5 [&>svg]:h-3.5">{icon}</span><span className="text-[10px] uppercase tracking-[.18em] text-zinc-400 font-semibold">{title}</span></div>
+}
+
+function Stat({label,value}) {
+  return <div className="px-3 py-2 rounded-xl border border-white/5 bg-white/[.025]"><div className="text-[9px] uppercase tracking-widest text-zinc-600">{label}</div><div className="text-xs font-semibold mt-1">{value}</div></div>
+}
+
+function VideoCard({asset,onExport}) {
+  const [playing,setPlaying] = useState(false);
+  return (
+    <article className="group rounded-2xl overflow-hidden border border-white/6 bg-[#0d0f14] hover:border-violet-400/25 transition-all hover:-translate-y-0.5">
+      <div className="relative aspect-video bg-black overflow-hidden">
+        <video
+          src={asset.src}
+          muted
+          loop
+          playsInline
+          className="w-full h-full object-cover transition duration-700 group-hover:scale-[1.025]"
+          onMouseEnter={e=>{e.currentTarget.play().catch(()=>{});setPlaying(true)}}
+          onMouseLeave={e=>{e.currentTarget.pause();e.currentTarget.currentTime=0;setPlaying(false)}}
+        />
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/75 via-transparent to-black/20"/>
+        <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-black/60 border border-white/10 text-[9px] tracking-widest uppercase">{asset.resolution}</div>
+        <div className={`absolute top-3 right-3 px-2 py-1 rounded-md text-[9px] ${playing ? "bg-violet-500/70 text-white" : "bg-black/60 text-zinc-400"}`}>{playing ? "LIVE PREVIEW" : "MASTER"}</div>
+        <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+          <div><div className="text-xs font-semibold">{asset.title}</div><div className="text-[9px] text-zinc-400 mt-1">{asset.preset} · {asset.duration}</div></div>
+          <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur flex items-center justify-center border border-white/10"><Play className="w-3.5 h-3.5 fill-white"/></div>
+        </div>
+      </div>
+      <div className="p-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-[9px] text-zinc-600"><BadgeCheck className="w-3.5 h-3.5 text-emerald-500"/> AI Master</div>
+        <button onClick={onExport} className="px-3 py-2 rounded-lg bg-white/[.05] hover:bg-violet-500/15 border border-white/5 hover:border-violet-400/25 text-[10px] font-medium flex items-center gap-1.5"><Download className="w-3.5 h-3.5"/> Export Asset</button>
+      </div>
+    </article>
+  )
+}
+
+createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
