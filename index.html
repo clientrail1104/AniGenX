@@ -1,3070 +1,3844 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0A0A0C">
-  <meta name="description" content="PersonaAI — Generate hyper-photorealistic human avatars from a single prompt.">
-
-  <title>PersonaAI — Photorealistic Human Avatars</title>
-
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <!-- Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-
-  <style>
-    /* =========================================================
-       PERSONA AI
-       Single-file HTML application
-       ========================================================= */
-
-    :root {
-      --bg: #0A0A0C;
-      --bg-2: #0E0E12;
-      --panel: rgba(18, 18, 24, 0.68);
-      --panel-solid: #121218;
-      --white: #ffffff;
-      --text: #f5f5f7;
-      --muted: rgba(245,245,247,.48);
-      --muted-2: rgba(245,245,247,.28);
-      --border: rgba(255,255,255,.085);
-
-      --violet: #8B5CF6;
-      --violet-2: #A78BFA;
-      --blue: #5B8CFF;
-      --cyan: #55D6FF;
-
-      --radius: 24px;
-
-      --shadow-glow:
-        0 0 90px rgba(139,92,246,.14),
-        0 0 35px rgba(91,140,255,.08);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      min-height: 100vh;
-      background:
-        radial-gradient(
-          circle at 50% -10%,
-          rgba(139,92,246,.13),
-          transparent 35%
-        ),
-        radial-gradient(
-          circle at 100% 55%,
-          rgba(91,140,255,.08),
-          transparent 30%
-        ),
-        var(--bg);
-
-      color: var(--text);
-      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-
-      overflow-x: hidden;
-    }
-
-    button,
-    input,
-    textarea,
-    select {
-      font-family: inherit;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    ::selection {
-      background: rgba(139,92,246,.35);
-    }
-
-    /* =========================================================
-       AMBIENT BACKGROUND
-       ========================================================= */
-
-    .ambient {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      overflow: hidden;
-      z-index: 0;
-    }
-
-    .orb {
-      position: absolute;
-      border-radius: 999px;
-      filter: blur(110px);
-      opacity: .4;
-      animation: drift 12s ease-in-out infinite alternate;
-    }
-
-    .orb.one {
-      width: 600px;
-      height: 600px;
-      left: -280px;
-      top: 20%;
-      background: rgba(139,92,246,.10);
-    }
-
-    .orb.two {
-      width: 550px;
-      height: 550px;
-      right: -220px;
-      top: 38%;
-      background: rgba(45,115,255,.10);
-      animation-delay: -3s;
-    }
-
-    .orb.three {
-      width: 500px;
-      height: 500px;
-      left: 35%;
-      bottom: -300px;
-      background: rgba(191,64,255,.08);
-      animation-delay: -6s;
-    }
-
-    @keyframes drift {
-      from {
-        transform: translate3d(0,0,0) scale(1);
-      }
-      to {
-        transform: translate3d(25px,-20px,0) scale(1.08);
-      }
-    }
-
-    /* =========================================================
-       GRID TEXTURE
-       ========================================================= */
-
-    .grid-bg {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      opacity: .35;
-      background-image:
-        linear-gradient(
-          rgba(255,255,255,.022) 1px,
-          transparent 1px
-        ),
-        linear-gradient(
-          90deg,
-          rgba(255,255,255,.022) 1px,
-          transparent 1px
-        );
-      background-size: 48px 48px;
-
-      mask-image: linear-gradient(
-        to bottom,
-        black,
-        transparent 75%
-      );
-
-      z-index: 0;
-    }
-
-    /* =========================================================
-       NAVIGATION
-       ========================================================= */
-
-    .navbar {
-      position: relative;
-      z-index: 10;
-
-      width: min(1200px, calc(100% - 40px));
-      margin: auto;
-
-      height: 76px;
-
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 11px;
-      font-size: 18px;
-      font-weight: 800;
-      letter-spacing: -.04em;
-    }
-
-    .brand-icon {
-      width: 38px;
-      height: 38px;
-
-      display: grid;
-      place-items: center;
-
-      border-radius: 12px;
-
-      background:
-        linear-gradient(
-          135deg,
-          var(--violet),
-          var(--blue)
-        );
-
-      box-shadow:
-        0 0 30px rgba(139,92,246,.25);
-    }
-
-    .brand-ai {
-      color: var(--violet-2);
-    }
-
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 30px;
-
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .nav-links a {
-      transition: .2s;
-    }
-
-    .nav-links a:hover {
-      color: white;
-    }
-
-    .nav-button {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-
-      padding: 10px 15px;
-
-      border-radius: 12px;
-
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,.035);
-
-      color: white;
-
-      font-size: 12px;
-      font-weight: 600;
-
-      transition: .25s;
-    }
-
-    .nav-button:hover {
-      background: rgba(255,255,255,.08);
-      transform: translateY(-1px);
-    }
-
-    .mobile-menu {
-      display: none;
-
-      width: 42px;
-      height: 42px;
-
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,.04);
-      color: white;
-
-      border-radius: 12px;
-    }
-
-    /* =========================================================
-       HERO
-       ========================================================= */
-
-    .hero {
-      position: relative;
-      z-index: 5;
-
-      width: min(1200px, calc(100% - 40px));
-      margin: auto;
-
-      padding:
-        100px 0
-        75px;
-    }
-
-    .hero-content {
-      max-width: 850px;
-      margin: auto;
-      text-align: center;
-    }
-
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-
-      padding: 8px 13px;
-
-      border: 1px solid rgba(139,92,246,.18);
-      background: rgba(139,92,246,.06);
-
-      color: #d7c7ff;
-
-      border-radius: 999px;
-
-      font-size: 11px;
-      font-weight: 600;
-
-      margin-bottom: 25px;
-
-      animation: appear .7s ease both;
-    }
-
-    .eyebrow i {
-      color: var(--violet-2);
-    }
-
-    .hero h1 {
-      font-size: clamp(44px, 7vw, 78px);
-
-      line-height: .98;
-
-      letter-spacing: -.065em;
-
-      font-weight: 800;
-
-      animation:
-        appear .8s .08s ease both;
-    }
-
-    .gradient-text {
-      background:
-        linear-gradient(
-          90deg,
-          #fff 0%,
-          #ddd3ff 45%,
-          #9fb9ff 100%
-        );
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+>
+
+<meta
+  name="description"
+  content="PersonaAI — Generate photorealistic human avatars from a single prompt."
+>
+
+<meta name="theme-color" content="#0A0A0C">
+
+<title>PersonaAI — Photorealistic Human Avatars</title>
+
+<style>
+/* ============================================================
+   PERSONAAI
+   Standalone HTML / CSS / JavaScript
+   No framework required
+   ============================================================ */
+
+:root {
+  --bg: #0A0A0C;
+  --bg2: #0E0E12;
+
+  --panel: rgba(20, 20, 27, 0.72);
+  --panel2: rgba(255,255,255,.035);
+
+  --text: #f7f7fb;
+  --muted: rgba(247,247,251,.55);
+  --muted2: rgba(247,247,251,.32);
+
+  --border: rgba(255,255,255,.09);
+
+  --violet: #8B5CF6;
+  --violet2: #A78BFA;
+
+  --blue: #5B8CFF;
+  --cyan: #54D8FF;
+
+  --success: #63E6BE;
+
+  --radius: 24px;
+}
+
+/* ============================================================
+   RESET
+   ============================================================ */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+
+  background:
+    radial-gradient(
+      circle at 50% -10%,
+      rgba(139,92,246,.15),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 95% 45%,
+      rgba(91,140,255,.09),
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at 5% 70%,
+      rgba(139,92,246,.07),
+      transparent 28%
+    ),
+    var(--bg);
+
+  color: var(--text);
+
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  overflow-x: hidden;
+}
+
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+img {
+  max-width: 100%;
+}
 
-      -webkit-background-clip: text;
-      background-clip: text;
-
-      color: transparent;
-    }
-
-    .hero-description {
-      max-width: 650px;
+::selection {
+  background: rgba(139,92,246,.35);
+}
 
-      margin: 25px auto 0;
-
-      color: var(--muted);
+/* ============================================================
+   BACKGROUND
+   ============================================================ */
 
-      font-size: 16px;
-      line-height: 1.75;
+.background-grid {
+  position: fixed;
+  inset: 0;
 
-      animation:
-        appear .8s .16s ease both;
-    }
+  pointer-events: none;
 
-    @keyframes appear {
-      from {
-        opacity: 0;
-        transform: translateY(18px);
-      }
+  background-image:
+    linear-gradient(
+      rgba(255,255,255,.018) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,.018) 1px,
+      transparent 1px
+    );
 
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
+  background-size: 50px 50px;
 
-    /* =========================================================
-       GENERATOR
-       ========================================================= */
+  mask-image:
+    linear-gradient(
+      to bottom,
+      black 0%,
+      transparent 82%
+    );
 
-    .generator {
-      max-width: 850px;
+  z-index: 0;
+}
 
-      margin: 48px auto 0;
+.orb {
+  position: fixed;
 
-      animation:
-        appear .8s .25s ease both;
-    }
+  width: 420px;
+  height: 420px;
 
-    .prompt-shell {
-      position: relative;
+  border-radius: 50%;
 
-      padding: 1px;
+  filter: blur(110px);
 
-      border-radius: 29px;
+  opacity: .18;
 
-      background:
-        linear-gradient(
-          100deg,
-          rgba(139,92,246,.5),
-          rgba(91,140,255,.22),
-          rgba(139,92,246,.45)
-        );
+  pointer-events: none;
 
-      box-shadow: var(--shadow-glow);
-    }
+  z-index: 0;
 
-    .prompt-card {
-      position: relative;
+  animation:
+    floatingOrb 13s ease-in-out infinite alternate;
+}
 
-      border-radius: 28px;
+.orb-a {
+  left: -220px;
+  top: 25%;
+  background: var(--violet);
+}
 
-      padding: 12px;
+.orb-b {
+  right: -220px;
+  top: 50%;
+  background: var(--blue);
+  animation-delay: -4s;
+}
 
-      background:
-        rgba(16,16,21,.78);
+.orb-c {
+  left: 40%;
+  bottom: -320px;
+  background: #B44CFF;
+  animation-delay: -8s;
+}
 
-      border: 1px solid rgba(255,255,255,.06);
+@keyframes floatingOrb {
+  from {
+    transform: translate3d(0,0,0) scale(1);
+  }
 
-      backdrop-filter: blur(28px);
-      -webkit-backdrop-filter: blur(28px);
-    }
+  to {
+    transform: translate3d(30px,-25px,0) scale(1.08);
+  }
+}
 
-    .prompt-textarea {
-      display: block;
+/* ============================================================
+   NAV
+   ============================================================ */
 
-      width: 100%;
-      min-height: 150px;
+.nav {
+  position: relative;
+  z-index: 10;
 
-      padding:
-        12px
-        12px
-        75px;
+  width: min(1200px, calc(100% - 40px));
 
-      border: 0;
-      outline: none;
+  height: 78px;
 
-      resize: none;
+  margin: auto;
 
-      background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 
-      color: white;
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 11px;
 
-      font-size: 16px;
-      line-height: 1.7;
-    }
+  color: white;
 
-    .prompt-textarea::placeholder {
-      color: rgba(255,255,255,.25);
-      transition: opacity .3s;
-    }
+  font-size: 18px;
+  font-weight: 800;
 
-    .prompt-actions {
-      position: absolute;
+  letter-spacing: -.05em;
 
-      bottom: 10px;
-      left: 10px;
-      right: 10px;
+  text-decoration: none;
+}
 
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+.logo-mark {
+  width: 38px;
+  height: 38px;
 
-      gap: 10px;
-    }
+  display: grid;
+  place-items: center;
 
-    /* Magic Prompt */
+  border-radius: 12px;
 
-    .magic-button {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+  background:
+    linear-gradient(
+      135deg,
+      var(--violet),
+      var(--blue)
+    );
 
-      padding: 8px 11px;
+  box-shadow:
+    0 0 35px rgba(139,92,246,.3);
+}
 
-      border-radius: 11px;
+.logo-ai {
+  color: var(--violet2);
+}
 
-      border: 1px solid rgba(139,92,246,.22);
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
 
-      background:
-        rgba(139,92,246,.09);
+.nav-links a {
+  color: var(--muted);
 
-      color: #d9ccff;
+  font-size: 12px;
 
-      font-size: 11px;
-      font-weight: 600;
+  text-decoration: none;
 
-      transition: .25s;
-    }
+  transition: color .2s ease;
+}
 
-    .magic-button:hover {
-      background:
-        rgba(139,92,246,.15);
-    }
+.nav-links a:hover {
+  color: white;
+}
 
-    .magic-button.off {
-      border-color: var(--border);
-      background: rgba(255,255,255,.035);
-      color: var(--muted);
-    }
+.nav-create {
+  display: flex;
+  align-items: center;
+  gap: 7px;
 
-    .switch {
-      width: 30px;
-      height: 17px;
+  min-height: 38px;
 
-      padding: 2px;
+  padding: 0 14px;
 
-      border: 0;
-      border-radius: 999px;
+  border:
+    1px solid var(--border);
 
-      background: rgba(255,255,255,.13);
-    }
+  border-radius: 11px;
 
-    .switch span {
-      display: block;
+  background:
+    rgba(255,255,255,.035);
 
-      width: 13px;
-      height: 13px;
+  color: white;
 
-      border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
 
-      background: white;
+  transition:
+    background .2s,
+    transform .2s;
+}
 
-      transition: .25s;
-    }
+.nav-create:hover {
+  background:
+    rgba(255,255,255,.08);
 
-    .switch.active {
-      background: var(--violet);
-    }
+  transform:
+    translateY(-1px);
+}
 
-    .switch.active span {
-      transform: translateX(13px);
-    }
+.mobile-button {
+  display: none;
 
-    /* Generate */
+  width: 40px;
+  height: 40px;
 
-    .generate-button {
-      position: relative;
+  border:
+    1px solid var(--border);
 
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
+  border-radius: 11px;
 
-      min-height: 42px;
+  background:
+    rgba(255,255,255,.04);
 
-      padding: 0 17px;
+  color: white;
 
-      overflow: hidden;
+  font-size: 18px;
+}
 
-      border: 0;
-      border-radius: 12px;
+/* ============================================================
+   HERO
+   ============================================================ */
 
-      background:
-        linear-gradient(
-          100deg,
-          #7c3aed,
-          #6366f1,
-          #4f8cff
-        );
+.hero {
+  position: relative;
+  z-index: 2;
 
-      color: white;
+  width: min(1200px, calc(100% - 40px));
 
-      font-size: 12px;
-      font-weight: 700;
+  margin: auto;
 
-      box-shadow:
-        0 10px 35px rgba(99,102,241,.22);
+  padding:
+    105px 0
+    55px;
+}
 
-      transition:
-        transform .2s,
-        box-shadow .2s;
-    }
+.hero-inner {
+  max-width: 900px;
 
-    .generate-button::after {
-      content: "";
+  margin: auto;
 
-      position: absolute;
+  text-align: center;
+}
 
-      inset: 0;
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 
-      background:
-        linear-gradient(
-          110deg,
-          transparent 25%,
-          rgba(255,255,255,.35) 45%,
-          transparent 65%
-        );
+  padding: 8px 13px;
 
-      transform: translateX(-100%);
+  border:
+    1px solid rgba(139,92,246,.22);
 
-      transition: transform .7s;
-    }
+  border-radius: 999px;
 
-    .generate-button:hover::after {
-      transform: translateX(100%);
-    }
+  background:
+    rgba(139,92,246,.07);
 
-    .generate-button:hover {
-      transform: translateY(-2px);
+  color:
+    #dcd0ff;
 
-      box-shadow:
-        0 15px 45px rgba(99,102,241,.35);
-    }
+  font-size: 10px;
+  font-weight: 700;
 
-    .generate-button:disabled {
-      opacity: .55;
-      cursor: not-allowed;
-      transform: none;
-    }
+  letter-spacing: .02em;
 
-    /* =========================================================
-       STYLE PILLS
-       ========================================================= */
+  animation:
+    fadeUp .7s ease both;
+}
 
-    .style-pills {
-      display: flex;
+.badge-dot {
+  width: 6px;
+  height: 6px;
 
-      flex-wrap: wrap;
+  border-radius: 50%;
 
-      justify-content: center;
+  background:
+    var(--violet2);
 
-      gap: 8px;
+  box-shadow:
+    0 0 12px var(--violet);
+}
 
-      margin-top: 17px;
-    }
+.hero h1 {
+  margin-top: 26px;
 
-    .style-pill {
-      padding: 9px 13px;
+  font-size:
+    clamp(44px, 7vw, 78px);
 
-      border-radius: 999px;
+  line-height: .98;
 
-      border: 1px solid var(--border);
+  letter-spacing: -.07em;
 
-      background:
-        rgba(255,255,255,.025);
+  font-weight: 800;
 
-      color: rgba(255,255,255,.46);
+  animation:
+    fadeUp .8s .08s ease both;
+}
 
-      font-size: 11px;
-      font-weight: 500;
+.gradient {
+  background:
+    linear-gradient(
+      100deg,
+      #ffffff,
+      #d9ccff 45%,
+      #a9c2ff
+    );
 
-      transition: .2s;
-    }
+  -webkit-background-clip: text;
+  background-clip: text;
 
-    .style-pill:hover {
-      color: white;
+  color: transparent;
+}
 
-      background:
-        rgba(255,255,255,.055);
-    }
+.hero-description {
+  max-width: 670px;
 
-    .style-pill.active {
-      color: #ded4ff;
+  margin:
+    25px auto 0;
 
-      border-color:
-        rgba(139,92,246,.28);
+  color: var(--muted);
 
-      background:
-        rgba(139,92,246,.10);
-    }
+  font-size: 15px;
 
-    /* =========================================================
-       CONTROL PANEL
-       ========================================================= */
+  line-height: 1.75;
 
-    .controls {
-      display: grid;
+  animation:
+    fadeUp .8s .16s ease both;
+}
 
-      grid-template-columns:
-        1.2fr
-        .8fr
-        .8fr;
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
 
-      gap: 14px;
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-      margin-top: 25px;
+/* ============================================================
+   GENERATOR
+   ============================================================ */
 
-      padding: 17px;
+.generator {
+  max-width: 880px;
 
-      border:
-        1px solid var(--border);
+  margin:
+    48px auto 0;
 
-      border-radius: 19px;
+  animation:
+    fadeUp .8s .25s ease both;
+}
 
-      background:
-        rgba(18,18,24,.57);
+.prompt-border {
+  padding: 1px;
 
-      backdrop-filter: blur(25px);
-    }
+  border-radius: 28px;
 
-    .control-label {
-      margin-bottom: 8px;
+  background:
+    linear-gradient(
+      110deg,
+      rgba(139,92,246,.58),
+      rgba(91,140,255,.22),
+      rgba(139,92,246,.48)
+    );
 
-      color: var(--muted-2);
+  box-shadow:
+    0 0 90px rgba(139,92,246,.12);
+}
 
-      text-transform: uppercase;
+.prompt-box {
+  position: relative;
 
-      letter-spacing: .15em;
+  min-height: 180px;
 
-      font-size: 9px;
-      font-weight: 700;
-    }
+  border-radius: 27px;
 
-    .ratio-group {
-      display: grid;
+  background:
+    rgba(14,14,19,.88);
 
-      grid-template-columns:
-        repeat(3,1fr);
+  border:
+    1px solid rgba(255,255,255,.055);
 
-      gap: 5px;
-    }
+  backdrop-filter:
+    blur(28px);
 
-    .ratio {
-      padding: 9px 5px;
+  -webkit-backdrop-filter:
+    blur(28px);
 
-      border: 0;
+  overflow: hidden;
+}
 
-      border-radius: 8px;
+.prompt-box textarea {
+  width: 100%;
 
-      background:
-        rgba(255,255,255,.04);
+  min-height: 180px;
 
-      color: var(--muted);
+  padding:
+    22px
+    22px
+    72px;
 
-      font-size: 10px;
-    }
+  resize: vertical;
 
-    .ratio.active {
-      background: white;
-      color: #09090b;
-      font-weight: 700;
-    }
+  border: 0;
+  outline: 0;
 
-    .select-wrapper {
-      position: relative;
-    }
+  background: transparent;
 
-    .select-wrapper select {
-      width: 100%;
+  color: white;
 
-      appearance: none;
+  font-size: 15px;
 
-      padding:
-        9px 30px
-        9px 10px;
+  line-height: 1.7;
+}
 
-      border:
-        1px solid rgba(255,255,255,.07);
+.prompt-box textarea::placeholder {
+  color:
+    rgba(255,255,255,.25);
 
-      border-radius: 8px;
+  transition: opacity .2s ease;
+}
 
-      outline: none;
+.prompt-bottom {
+  position: absolute;
 
-      background:
-        rgba(255,255,255,.04);
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
 
-      color: rgba(255,255,255,.7);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 
-      font-size: 10px;
-    }
+  gap: 10px;
+}
 
-    .select-wrapper i {
-      position: absolute;
+.magic {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 
-      right: 9px;
-      top: 50%;
+  min-height: 40px;
 
-      transform: translateY(-50%);
+  padding: 0 11px;
 
-      pointer-events: none;
+  border:
+    1px solid rgba(139,92,246,.25);
 
-      color: rgba(255,255,255,.3);
-    }
+  border-radius: 11px;
 
-    /* =========================================================
-       GENERATION PANEL
-       ========================================================= */
+  background:
+    rgba(139,92,246,.08);
 
-    .generation-container {
-      display: none;
+  color:
+    #ddd1ff;
 
-      max-width: 850px;
+  font-size: 10px;
+  font-weight: 700;
 
-      margin: 30px auto 0;
-    }
+  transition: .2s;
+}
 
-    .generation-container.visible {
-      display: block;
+.magic:hover {
+  background:
+    rgba(139,92,246,.14);
+}
 
-      animation:
-        appear .5s ease both;
-    }
+.magic.off {
+  color: var(--muted);
 
-    .generation-card {
-      overflow: hidden;
+  border-color:
+    var(--border);
 
-      padding: 20px;
+  background:
+    rgba(255,255,255,.035);
+}
 
-      border:
-        1px solid var(--border);
+.toggle {
+  position: relative;
 
-      border-radius: 24px;
+  width: 30px;
+  height: 17px;
 
-      background:
-        rgba(18,18,24,.65);
+  border: 0;
 
-      backdrop-filter: blur(24px);
-    }
+  border-radius: 999px;
 
-    .generation-header {
-      display: flex;
+  background:
+    rgba(255,255,255,.15);
+}
 
-      align-items: center;
-      justify-content: space-between;
-    }
+.toggle span {
+  position: absolute;
 
-    .generation-title {
-      display: flex;
+  top: 2px;
+  left: 2px;
 
-      align-items: center;
+  width: 13px;
+  height: 13px;
 
-      gap: 12px;
-    }
+  border-radius: 50%;
 
-    .generation-icon {
-      width: 40px;
-      height: 40px;
+  background: white;
 
-      display: grid;
-      place-items: center;
+  transition:
+    transform .2s ease;
+}
 
-      border-radius: 12px;
+.toggle.active {
+  background:
+    var(--violet);
+}
 
-      background:
-        rgba(139,92,246,.1);
+.toggle.active span {
+  transform:
+    translateX(13px);
+}
 
-      color: var(--violet-2);
-    }
+.generate {
+  position: relative;
 
-    .generation-title strong {
-      display: block;
+  min-height: 42px;
 
-      font-size: 12px;
-    }
+  padding:
+    0 17px;
 
-    .generation-title small {
-      display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 
-      margin-top: 4px;
+  overflow: hidden;
 
-      color: var(--muted-2);
+  border: 0;
 
-      font-size: 10px;
-    }
+  border-radius: 11px;
 
-    .progress-percent {
-      color: #d8ccff;
+  background:
+    linear-gradient(
+      105deg,
+      #7c3aed,
+      #6366f1,
+      #4f8cff
+    );
 
-      font-size: 12px;
-      font-weight: 700;
-    }
+  color: white;
 
-    .progress {
-      height: 5px;
+  font-size: 11px;
+  font-weight: 800;
 
-      margin-top: 18px;
+  box-shadow:
+    0 10px 35px rgba(99,102,241,.22);
 
-      overflow: hidden;
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease;
+}
 
-      border-radius: 999px;
+.generate::after {
+  content: "";
 
-      background:
-        rgba(255,255,255,.06);
-    }
+  position: absolute;
 
-    .progress-bar {
-      width: 0;
-      height: 100%;
+  inset: 0;
 
-      border-radius: inherit;
+  background:
+    linear-gradient(
+      105deg,
+      transparent 25%,
+      rgba(255,255,255,.35) 48%,
+      transparent 70%
+    );
 
-      background:
-        linear-gradient(
-          90deg,
-          var(--violet),
-          var(--blue)
-        );
+  transform:
+    translateX(-120%);
 
-      transition:
-        width .45s ease;
-    }
+  transition:
+    transform .7s ease;
+}
 
-    .preview-skeleton {
-      position: relative;
+.generate:hover::after {
+  transform:
+    translateX(120%);
+}
 
-      display: grid;
-      place-items: center;
+.generate:hover {
+  transform:
+    translateY(-2px);
 
-      aspect-ratio: 16 / 7;
+  box-shadow:
+    0 16px 45px rgba(99,102,241,.32);
+}
 
-      margin-top: 17px;
+.generate:disabled {
+  opacity: .6;
+  cursor: wait;
+  transform: none;
+}
 
-      overflow: hidden;
+/* ============================================================
+   STYLE PILLS
+   ============================================================ */
 
-      border-radius: 18px;
+.styles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
 
-      background:
-        linear-gradient(
-          110deg,
-          rgba(255,255,255,.025),
-          rgba(255,255,255,.055),
-          rgba(255,255,255,.025)
-        );
+  gap: 8px;
 
-      background-size: 200% 100%;
+  margin-top: 17px;
+}
 
-      animation:
-        skeleton 2s linear infinite;
-    }
+.style {
+  padding:
+    9px 13px;
 
-    @keyframes skeleton {
-      to {
-        background-position: -200% 0;
-      }
-    }
+  border:
+    1px solid var(--border);
 
-    .preview-skeleton-content {
-      text-align: center;
+  border-radius: 999px;
 
-      color: rgba(255,255,255,.2);
-    }
+  background:
+    rgba(255,255,255,.025);
 
-    .preview-skeleton-content i {
-      width: 32px;
-      height: 32px;
+  color:
+    rgba(255,255,255,.45);
 
-      margin-bottom: 8px;
-    }
+  font-size: 10px;
+  font-weight: 600;
 
-    .preview-skeleton-content p {
-      font-size: 10px;
-    }
+  transition:
+    color .2s,
+    background .2s,
+    border-color .2s;
+}
 
-    /* =========================================================
-       SHOWCASE
-       ========================================================= */
+.style:hover {
+  color: white;
 
-    .showcase {
-      position: relative;
+  background:
+    rgba(255,255,255,.06);
+}
 
-      z-index: 5;
+.style.active {
+  color:
+    #e2d8ff;
 
-      width:
-        min(1200px, calc(100% - 40px));
+  border-color:
+    rgba(139,92,246,.3);
 
-      margin: auto;
+  background:
+    rgba(139,92,246,.1);
+}
 
-      padding:
-        50px 0 100px;
-    }
+/* ============================================================
+   OPTIONS
+   ============================================================ */
 
-    .section-heading {
-      display: flex;
+.options {
+  display: grid;
 
-      align-items: end;
-      justify-content: space-between;
+  grid-template-columns:
+    1.25fr
+    .8fr
+    .8fr;
 
-      margin-bottom: 28px;
-    }
+  gap: 13px;
 
-    .section-eyebrow {
-      margin-bottom: 8px;
+  margin-top: 23px;
 
-      color:
-        rgba(167,139,250,.7);
+  padding: 16px;
 
-      font-size: 9px;
+  border:
+    1px solid var(--border);
 
-      font-weight: 700;
+  border-radius: 18px;
 
-      letter-spacing: .2em;
+  background:
+    rgba(17,17,23,.58);
 
-      text-transform: uppercase;
-    }
+  backdrop-filter:
+    blur(24px);
+}
 
-    .section-heading h2 {
-      font-size: 27px;
+.label {
+  margin-bottom: 8px;
 
-      letter-spacing: -.04em;
-    }
+  color:
+    var(--muted2);
 
-    .section-note {
-      color: var(--muted-2);
+  font-size: 8px;
 
-      font-size: 10px;
-    }
+  font-weight: 800;
 
-    .masonry {
-      columns: 3 260px;
+  letter-spacing: .17em;
 
-      column-gap: 15px;
-    }
+  text-transform: uppercase;
+}
 
-    .avatar-card {
-      position: relative;
+.ratios {
+  display: grid;
 
-      display: inline-block;
+  grid-template-columns:
+    repeat(3, 1fr);
 
-      width: 100%;
+  gap: 5px;
+}
 
-      margin:
-        0 0 15px;
+.ratio {
+  min-height: 34px;
 
-      overflow: hidden;
+  border: 0;
 
-      break-inside: avoid;
+  border-radius: 8px;
 
-      border-radius: 17px;
+  background:
+    rgba(255,255,255,.045);
 
-      border:
-        1px solid var(--border);
+  color:
+    var(--muted);
 
-      background:
-        rgba(255,255,255,.025);
+  font-size: 9px;
 
-      cursor: pointer;
-    }
+  transition: .2s;
+}
 
-    .avatar-card img {
-      display: block;
+.ratio.active {
+  background: white;
 
-      width: 100%;
+  color:
+    #09090b;
 
-      height: auto;
+  font-weight: 800;
+}
 
-      transition:
-        transform .7s ease;
-    }
+.select {
+  position: relative;
+}
 
-    .avatar-card:hover img {
-      transform: scale(1.045);
-    }
+.select select {
+  width: 100%;
 
-    .avatar-overlay {
-      position: absolute;
+  min-height: 34px;
 
-      inset: 0;
+  appearance: none;
 
-      display: flex;
+  border:
+    1px solid rgba(255,255,255,.07);
 
-      flex-direction: column;
+  border-radius: 8px;
 
-      justify-content: end;
+  outline: 0;
 
-      padding: 18px;
+  background:
+    rgba(255,255,255,.035);
 
-      background:
-        linear-gradient(
-          to top,
-          rgba(0,0,0,.95),
-          rgba(0,0,0,.6) 35%,
-          transparent 70%
-        );
+  color:
+    rgba(255,255,255,.72);
 
-      opacity: 0;
+  padding:
+    0 30px 0 10px;
 
-      transform: translateY(8px);
+  font-size: 9px;
+}
 
-      transition:
-        opacity .3s,
-        transform .3s;
-    }
+.select-arrow {
+  position: absolute;
 
-    .avatar-card:hover .avatar-overlay {
-      opacity: 1;
+  right: 9px;
+  top: 50%;
 
-      transform: translateY(0);
-    }
+  transform:
+    translateY(-50%);
 
-    .avatar-name {
-      margin-bottom: 7px;
+  pointer-events: none;
 
-      color: #ded4ff;
+  color:
+    var(--muted2);
 
-      font-size: 11px;
+  font-size: 12px;
+}
 
-      font-weight: 700;
-    }
+/* ============================================================
+   RESULT
+   ============================================================ */
 
-    .avatar-prompt {
-      display: -webkit-box;
+.result {
+  display: none;
 
-      overflow: hidden;
+  max-width: 880px;
 
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
+  margin:
+    25px auto 0;
+}
 
-      color:
-        rgba(255,255,255,.68);
+.result.visible {
+  display: block;
 
-      font-size: 10px;
+  animation:
+    fadeUp .5s ease both;
+}
 
-      line-height: 1.6;
-    }
+.result-card {
+  padding: 17px;
 
-    .avatar-actions {
-      display: flex;
+  border:
+    1px solid var(--border);
 
-      gap: 7px;
+  border-radius: 22px;
 
-      margin-top: 12px;
-    }
+  background:
+    rgba(17,17,23,.68);
 
-    .small-button {
-      display: inline-flex;
+  backdrop-filter:
+    blur(25px);
+}
 
-      align-items: center;
+.result-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 
-      gap: 5px;
+.result-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-      padding: 8px 10px;
+.result-icon {
+  width: 38px;
+  height: 38px;
 
-      border-radius: 8px;
+  display: grid;
+  place-items: center;
 
-      border: 1px solid rgba(255,255,255,.12);
+  border-radius: 11px;
 
-      background:
-        rgba(255,255,255,.9);
+  background:
+    rgba(139,92,246,.1);
 
-      color: #111;
+  color:
+    var(--violet2);
 
-      font-size: 9px;
+  font-size: 16px;
+}
 
-      font-weight: 700;
-    }
+.result-title strong {
+  display: block;
 
-    .small-button.secondary {
-      background:
-        rgba(0,0,0,.35);
+  font-size: 11px;
+}
 
-      color: white;
-    }
+.result-title span {
+  display: block;
 
-    /* =========================================================
-       FOOTER
-       ========================================================= */
+  margin-top: 3px;
 
-    footer {
-      position: relative;
+  color:
+    var(--muted2);
 
-      z-index: 5;
+  font-size: 9px;
+}
 
-      border-top:
-        1px solid rgba(255,255,255,.055);
-    }
+.result-percent {
+  color:
+    #d9cdff;
 
-    .footer-inner {
-      width:
-        min(1200px, calc(100% - 40px));
+  font-size: 11px;
 
-      margin: auto;
+  font-weight: 800;
+}
 
-      padding: 28px 0;
+.progress-track {
+  height: 5px;
 
-      display: flex;
+  margin-top: 15px;
 
-      align-items: center;
-      justify-content: space-between;
+  overflow: hidden;
 
-      color:
-        rgba(255,255,255,.28);
+  border-radius: 999px;
 
-      font-size: 10px;
-    }
+  background:
+    rgba(255,255,255,.06);
+}
 
-    .api-ready {
-      display: flex;
+.progress-fill {
+  width: 0%;
 
-      align-items: center;
+  height: 100%;
 
-      gap: 7px;
-    }
+  border-radius: inherit;
 
-    /* =========================================================
-       MODAL
-       ========================================================= */
+  background:
+    linear-gradient(
+      90deg,
+      var(--violet),
+      var(--blue),
+      var(--cyan)
+    );
 
-    .modal {
-      position: fixed;
+  transition:
+    width .45s ease;
+}
 
-      inset: 0;
+.render-preview {
+  position: relative;
 
-      z-index: 100;
+  min-height: 280px;
 
-      display: none;
+  margin-top: 15px;
 
-      align-items: center;
-      justify-content: center;
+  display: grid;
+  place-items: center;
 
-      padding: 20px;
+  overflow: hidden;
 
-      background:
-        rgba(0,0,0,.78);
+  border-radius: 17px;
 
-      backdrop-filter:
-        blur(18px);
-    }
+  background:
+    linear-gradient(
+      110deg,
+      rgba(255,255,255,.025),
+      rgba(255,255,255,.06),
+      rgba(255,255,255,.025)
+    );
 
-    .modal.visible {
-      display: flex;
+  background-size:
+    200% 100%;
 
-      animation:
-        fadeIn .25s ease;
-    }
+  animation:
+    skeleton 1.8s linear infinite;
+}
 
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
+@keyframes skeleton {
+  to {
+    background-position:
+      -200% 0;
+  }
+}
 
-    .modal-content {
-      position: relative;
+.render-center {
+  text-align: center;
 
-      width: min(1050px, 100%);
+  color:
+    rgba(255,255,255,.25);
+}
 
-      max-height: 92vh;
+.loader {
+  width: 31px;
+  height: 31px;
 
-      overflow: auto;
+  margin: auto auto 10px;
 
-      padding: 15px;
+  border:
+    2px solid rgba(255,255,255,.1);
 
-      border:
-        1px solid rgba(255,255,255,.1);
+  border-top-color:
+    var(--violet2);
 
-      border-radius: 27px;
+  border-radius: 50%;
 
-      background:
-        rgba(17,17,22,.88);
+  animation:
+    spin .8s linear infinite;
+}
 
-      backdrop-filter:
-        blur(35px);
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
-      box-shadow:
-        0 40px 100px rgba(0,0,0,.55);
-    }
+.render-center p {
+  font-size: 10px;
+}
 
-    .modal-top {
-      display: flex;
+/* ============================================================
+   SHOWCASE
+   ============================================================ */
 
-      align-items: center;
-      justify-content: space-between;
+.showcase {
+  position: relative;
+  z-index: 2;
 
-      padding: 4px 4px 12px;
-    }
+  width:
+    min(1200px, calc(100% - 40px));
 
-    .modal-name {
-      font-size: 13px;
-      font-weight: 700;
-    }
+  margin:
+    0 auto;
 
-    .modal-subtitle {
-      margin-top: 4px;
+  padding:
+    55px 0
+    100px;
+}
 
-      color: var(--muted-2);
+.showcase-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
 
-      font-size: 9px;
-    }
+  margin-bottom: 26px;
+}
 
-    .close-modal {
-      width: 36px;
-      height: 36px;
+.kicker {
+  margin-bottom: 8px;
 
-      display: grid;
-      place-items: center;
+  color:
+    rgba(167,139,250,.72);
 
-      border: 0;
+  font-size: 8px;
+  font-weight: 800;
 
-      border-radius: 10px;
+  letter-spacing: .2em;
 
-      background:
-        rgba(255,255,255,.05);
+  text-transform: uppercase;
+}
 
-      color: white;
-    }
+.showcase-header h2 {
+  font-size: 27px;
 
-    .modal-grid {
-      display: grid;
+  letter-spacing: -.05em;
+}
 
-      grid-template-columns:
-        1.25fr
-        .75fr;
+.showcase-note {
+  color:
+    var(--muted2);
 
-      gap: 14px;
-    }
+  font-size: 9px;
+}
 
-    .modal-image {
-      overflow: hidden;
+/* ============================================================
+   MASONRY
+   ============================================================ */
 
-      display: grid;
-      place-items: center;
+.gallery {
+  columns:
+    3 260px;
 
-      min-height: 400px;
+  column-gap: 15px;
+}
 
-      border-radius: 18px;
+.avatar {
+  position: relative;
 
-      background: #050506;
-    }
+  display: inline-block;
 
-    .modal-image img {
-      display: block;
+  width: 100%;
 
-      width: 100%;
-      height: 100%;
+  margin:
+    0 0 15px;
 
-      max-height: 70vh;
+  overflow: hidden;
 
-      object-fit: contain;
-    }
+  break-inside: avoid;
 
-    .modal-details {
-      display: flex;
+  border:
+    1px solid var(--border);
 
-      flex-direction: column;
+  border-radius: 17px;
 
-      padding: 20px;
+  background:
+    #111116;
 
-      border:
-        1px solid var(--border);
+  cursor: pointer;
+}
 
-      border-radius: 18px;
+.avatar img {
+  display: block;
 
-      background:
-        rgba(255,255,255,.025);
-    }
+  width: 100%;
 
-    .modal-label {
-      color: var(--muted-2);
+  height: auto;
 
-      font-size: 9px;
+  transition:
+    transform .7s ease;
+}
 
-      font-weight: 700;
+.avatar:hover img {
+  transform:
+    scale(1.045);
+}
 
-      letter-spacing: .18em;
+.avatar-overlay {
+  position: absolute;
 
-      text-transform: uppercase;
-    }
+  inset: 0;
 
-    .modal-prompt {
-      margin-top: 13px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 
-      color:
-        rgba(255,255,255,.68);
+  padding: 17px;
 
-      font-size: 11px;
+  background:
+    linear-gradient(
+      to top,
+      rgba(0,0,0,.96),
+      rgba(0,0,0,.63) 38%,
+      transparent 73%
+    );
 
-      line-height: 1.75;
-    }
+  opacity: 0;
 
-    .modal-buttons {
-      display: grid;
+  transform:
+    translateY(7px);
 
-      gap: 8px;
+  transition:
+    opacity .3s ease,
+    transform .3s ease;
+}
 
-      margin-top: auto;
+.avatar:hover .avatar-overlay {
+  opacity: 1;
 
-      padding-top: 30px;
-    }
+  transform:
+    translateY(0);
+}
 
-    .modal-button {
-      min-height: 40px;
+.avatar-name {
+  color:
+    #e0d6ff;
 
-      display: flex;
+  font-size: 10px;
 
-      align-items: center;
-      justify-content: center;
+  font-weight: 800;
+}
 
-      gap: 8px;
+.avatar-prompt {
+  display: -webkit-box;
 
-      border-radius: 10px;
+  margin-top: 6px;
 
-      border:
-        1px solid var(--border);
+  overflow: hidden;
 
-      background:
-        rgba(255,255,255,.04);
+  color:
+    rgba(255,255,255,.68);
 
-      color: white;
+  font-size: 9px;
 
-      font-size: 10px;
+  line-height: 1.6;
 
-      font-weight: 600;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
 
-      transition: .2s;
-    }
+.avatar-buttons {
+  display: flex;
 
-    .modal-button:hover {
-      background:
-        rgba(255,255,255,.08);
-    }
+  gap: 6px;
 
-    .modal-button.primary {
-      border: 0;
+  margin-top: 11px;
+}
 
-      background:
-        linear-gradient(
-          100deg,
-          var(--violet),
-          var(--blue)
-        );
-    }
+.avatar-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
 
-    /* =========================================================
-       TOAST
-       ========================================================= */
+  min-height: 31px;
 
-    .toast {
-      position: fixed;
+  padding:
+    0 10px;
 
-      right: 20px;
-      bottom: 20px;
+  border:
+    1px solid rgba(255,255,255,.13);
 
-      z-index: 200;
+  border-radius: 8px;
 
-      display: flex;
+  background:
+    rgba(255,255,255,.92);
 
-      align-items: center;
+  color:
+    #111;
 
-      gap: 8px;
+  font-size: 8px;
 
-      padding: 12px 15px;
+  font-weight: 800;
+}
 
-      border:
-        1px solid rgba(255,255,255,.1);
+.avatar-button.dark {
+  background:
+    rgba(0,0,0,.35);
 
-      border-radius: 12px;
+  color:
+    white;
+}
 
-      background:
-        rgba(20,20,25,.9);
+/* ============================================================
+   MODAL
+   ============================================================ */
 
-      backdrop-filter: blur(20px);
+.modal {
+  position: fixed;
 
-      color: white;
+  inset: 0;
 
-      font-size: 10px;
+  z-index: 100;
 
-      box-shadow:
-        0 15px 45px rgba(0,0,0,.35);
+  display: none;
 
-      transform:
-        translateY(20px);
+  align-items: center;
+  justify-content: center;
 
-      opacity: 0;
+  padding: 20px;
 
-      pointer-events: none;
+  background:
+    rgba(0,0,0,.8);
 
-      transition: .3s;
-    }
+  backdrop-filter:
+    blur(18px);
+}
 
-    .toast.show {
-      transform:
-        translateY(0);
+.modal.open {
+  display: flex;
 
-      opacity: 1;
-    }
+  animation:
+    modalFade .22s ease;
+}
 
-    /* =========================================================
-       RESPONSIVE
-       ========================================================= */
+@keyframes modalFade {
+  from {
+    opacity: 0;
+  }
 
-    @media (max-width: 850px) {
+  to {
+    opacity: 1;
+  }
+}
 
-      .nav-links,
-      .nav-button {
-        display: none;
-      }
+.modal-box {
+  position: relative;
 
-      .mobile-menu {
-        display: grid;
-        place-items: center;
-      }
+  width:
+    min(1080px, 100%);
 
-      .hero {
-        padding-top: 70px;
-      }
+  max-height:
+    94vh;
 
-      .controls {
-        grid-template-columns: 1fr;
-      }
+  overflow:
+    auto;
 
-      .modal-grid {
-        grid-template-columns: 1fr;
-      }
+  padding: 14px;
 
-      .modal-image {
-        min-height: 300px;
-      }
-    }
+  border:
+    1px solid rgba(255,255,255,.1);
 
-    @media (max-width: 600px) {
+  border-radius: 24px;
 
-      .navbar,
-      .hero,
-      .showcase,
-      .footer-inner {
-        width: min(100% - 26px, 1200px);
-      }
+  background:
+    rgba(16,16,21,.94);
 
-      .hero {
-        padding:
-          55px 0
-          45px;
-      }
+  box-shadow:
+    0 50px 130px rgba(0,0,0,.65);
+}
 
-      .hero h1 {
-        font-size: 44px;
-      }
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 
-      .hero-description {
-        font-size: 13px;
-      }
+  padding:
+    3px 3px 12px;
+}
 
-      .prompt-textarea {
-        min-height: 175px;
-        font-size: 14px;
-      }
+.modal-header strong {
+  display: block;
 
-      .prompt-actions {
-        align-items: flex-end;
-      }
+  font-size: 12px;
+}
 
-      .magic-button {
-        font-size: 9px;
-      }
+.modal-header span {
+  display: block;
 
-      .generate-button {
-        padding: 0 13px;
-        font-size: 10px;
-      }
+  margin-top: 4px;
 
-      .section-heading {
-        display: block;
-      }
+  color:
+    var(--muted2);
 
-      .section-note {
-        display: block;
-        margin-top: 7px;
-      }
+  font-size: 8px;
+}
 
-      .masonry {
-        columns: 1;
-      }
+.close {
+  width: 35px;
+  height: 35px;
 
-      .footer-inner {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-      }
-    }
-  </style>
+  border: 0;
+
+  border-radius: 10px;
+
+  background:
+    rgba(255,255,255,.05);
+
+  color:
+    white;
+
+  font-size: 17px;
+}
+
+.modal-grid {
+  display: grid;
+
+  grid-template-columns:
+    1.25fr .75fr;
+
+  gap: 14px;
+}
+
+.modal-photo {
+  min-height: 420px;
+
+  display: grid;
+  place-items: center;
+
+  overflow: hidden;
+
+  border-radius: 17px;
+
+  background:
+    #050507;
+}
+
+.modal-photo img {
+  width: 100%;
+  height: 100%;
+
+  max-height: 70vh;
+
+  object-fit: contain;
+}
+
+.modal-info {
+  display: flex;
+  flex-direction: column;
+
+  padding: 18px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius: 17px;
+
+  background:
+    rgba(255,255,255,.025);
+}
+
+.info-label {
+  color:
+    var(--muted2);
+
+  font-size: 8px;
+
+  font-weight: 800;
+
+  letter-spacing: .18em;
+
+  text-transform: uppercase;
+}
+
+.info-prompt {
+  margin-top: 12px;
+
+  color:
+    rgba(255,255,255,.7);
+
+  font-size: 10px;
+
+  line-height: 1.75;
+}
+
+.modal-actions {
+  display: grid;
+
+  gap: 7px;
+
+  margin-top: auto;
+
+  padding-top: 30px;
+}
+
+.modal-action {
+  min-height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius: 9px;
+
+  background:
+    rgba(255,255,255,.04);
+
+  color:
+    white;
+
+  font-size: 9px;
+
+  font-weight: 700;
+}
+
+.modal-action:hover {
+  background:
+    rgba(255,255,255,.08);
+}
+
+.modal-action.primary {
+  border: 0;
+
+  background:
+    linear-gradient(
+      100deg,
+      var(--violet),
+      var(--blue)
+    );
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+
+.toast {
+  position: fixed;
+
+  right: 20px;
+  bottom: 20px;
+
+  z-index: 200;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  min-height: 42px;
+
+  padding:
+    0 14px;
+
+  border:
+    1px solid rgba(255,255,255,.1);
+
+  border-radius: 11px;
+
+  background:
+    rgba(18,18,23,.95);
+
+  color:
+    white;
+
+  font-size: 9px;
+
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.45);
+
+  transform:
+    translateY(20px);
+
+  opacity: 0;
+
+  pointer-events: none;
+
+  transition:
+    .25s ease;
+}
+
+.toast.show {
+  transform:
+    translateY(0);
+
+  opacity: 1;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+
+.footer {
+  position: relative;
+  z-index: 2;
+
+  border-top:
+    1px solid rgba(255,255,255,.05);
+}
+
+.footer-inner {
+  width:
+    min(1200px, calc(100% - 40px));
+
+  margin:
+    auto;
+
+  min-height: 75px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  color:
+    rgba(255,255,255,.28);
+
+  font-size: 9px;
+}
+
+.api-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background:
+    var(--success);
+
+  box-shadow:
+    0 0 12px rgba(99,230,190,.7);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 850px) {
+
+  .nav-links,
+  .nav-create {
+    display: none;
+  }
+
+  .mobile-button {
+    display: block;
+  }
+
+  .options {
+    grid-template-columns:
+      1fr;
+  }
+
+  .modal-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+  .modal-photo {
+    min-height: 300px;
+  }
+}
+
+@media (max-width: 600px) {
+
+  .nav,
+  .hero,
+  .showcase,
+  .footer-inner {
+    width:
+      calc(100% - 26px);
+  }
+
+  .hero {
+    padding-top:
+      65px;
+  }
+
+  .hero h1 {
+    font-size:
+      44px;
+  }
+
+  .hero-description {
+    font-size:
+      13px;
+  }
+
+  .prompt-box textarea {
+    min-height:
+      200px;
+
+    font-size:
+      13px;
+  }
+
+  .prompt-bottom {
+    align-items:
+      flex-end;
+  }
+
+  .magic {
+    font-size:
+      8px;
+  }
+
+  .generate {
+    padding:
+      0 12px;
+
+    font-size:
+      9px;
+  }
+
+  .showcase-header {
+    display: block;
+  }
+
+  .showcase-note {
+    display: block;
+
+    margin-top:
+      8px;
+  }
+
+  .gallery {
+    columns:
+      1;
+  }
+
+  .footer-inner {
+    min-height:
+      100px;
+
+    flex-direction:
+      column;
+
+    align-items:
+      flex-start;
+
+    justify-content:
+      center;
+
+    gap:
+      10px;
+  }
+}
+</style>
 </head>
 
 <body>
 
-  <!-- Ambient background -->
-  <div class="ambient">
-    <div class="orb one"></div>
-    <div class="orb two"></div>
-    <div class="orb three"></div>
-  </div>
+<!-- ============================================================
+     BACKGROUND
+     ============================================================ -->
 
-  <div class="grid-bg"></div>
+<div class="background-grid"></div>
 
-  <!-- ========================================================
-       NAVIGATION
-       ======================================================== -->
+<div class="orb orb-a"></div>
+<div class="orb orb-b"></div>
+<div class="orb orb-c"></div>
 
-  <nav class="navbar">
 
-    <a href="#" class="brand">
-      <span class="brand-icon">
-        <i data-lucide="sparkles" width="18"></i>
-      </span>
+<!-- ============================================================
+     NAVIGATION
+     ============================================================ -->
 
-      <span>
-        Persona<span class="brand-ai">AI</span>
-      </span>
+<nav class="nav">
+
+  <a href="#" class="logo">
+
+    <span class="logo-mark">✦</span>
+
+    <span>
+      Persona<span class="logo-ai">AI</span>
+    </span>
+
+  </a>
+
+  <div class="nav-links">
+
+    <a href="#create">
+      Create
     </a>
 
-    <div class="nav-links">
-      <a href="#create">Create</a>
-      <a href="#showcase">Showcase</a>
-      <a href="#api">API Ready</a>
-    </div>
-
-    <button class="nav-button">
-      My Creations
-      <i data-lucide="arrow-up-right" width="14"></i>
-    </button>
-
-    <button class="mobile-menu" onclick="toggleMobileMenu()">
-      <i data-lucide="menu" width="18"></i>
-    </button>
-
-  </nav>
-
-  <!-- ========================================================
-       HERO / GENERATOR
-       ======================================================== -->
-
-  <section class="hero" id="create">
-
-    <div class="hero-content">
-
-      <div class="eyebrow">
-        <i data-lucide="zap" width="13"></i>
-        Next-generation human synthesis
-      </div>
-
-      <h1>
-        Generate
-        <span class="gradient-text">
-          Photorealistic
-        </span>
-        Humans in One Click
-      </h1>
-
-      <p class="hero-description">
-        Describe the person you imagine.
-        PersonaAI turns a single prompt into
-        a cinematic, hyper-real human portrait.
-      </p>
-
-    </div>
-
-    <!-- Generator -->
-    <div class="generator">
-
-      <div class="prompt-shell">
-
-        <div class="prompt-card">
-
-          <textarea
-            id="prompt"
-            class="prompt-textarea"
-            placeholder="30-year-old Japanese architect in a rain-slicked street, 85mm portrait..."
-            aria-label="Avatar prompt"
-          ></textarea>
-
-          <div class="prompt-actions">
-
-            <!-- Magic Prompt -->
-            <button
-              id="magicButton"
-              class="magic-button"
-              onclick="toggleMagic()"
-            >
-
-              <i data-lucide="wand-sparkles" width="14"></i>
-
-              <span>
-                Magic Prompt
-              </span>
-
-              <span
-                id="magicSwitch"
-                class="switch active"
-              >
-                <span></span>
-              </span>
-
-            </button>
-
-            <!-- Generate -->
-            <button
-              id="generateButton"
-              class="generate-button"
-              onclick="generateAvatar()"
-            >
-
-              <i data-lucide="sparkles" width="15"></i>
-
-              <span>
-                Generate Avatar
-              </span>
-
-            </button>
-
-          </div>
-
-        </div>
-
-      </div>
-
-      <!-- Style pills -->
-      <div class="style-pills">
-
-        <button class="style-pill active">
-          Studio Portrait
-        </button>
-
-        <button class="style-pill">
-          Cinematic Street
-        </button>
-
-        <button class="style-pill">
-          Editorial Fashion
-        </button>
-
-        <button class="style-pill">
-          Raw Photography
-        </button>
-
-        <button class="style-pill">
-          Vintage Film
-        </button>
-
-      </div>
-
-      <!-- Controls -->
-      <div class="controls">
-
-        <div>
-
-          <div class="control-label">
-            Aspect Ratio
-          </div>
-
-          <div class="ratio-group">
-
-            <button
-              class="ratio active"
-              data-ratio="1:1"
-            >
-              1:1
-            </button>
-
-            <button
-              class="ratio"
-              data-ratio="9:16"
-            >
-              9:16
-            </button>
-
-            <button
-              class="ratio"
-              data-ratio="16:9"
-            >
-              16:9
-            </button>
-
-          </div>
-
-        </div>
-
-        <div>
-
-          <div class="control-label">
-            Gender
-          </div>
-
-          <div class="select-wrapper">
-
-            <select id="gender">
-              <option>Any</option>
-              <option>Female</option>
-              <option>Male</option>
-              <option>Androgynous</option>
-            </select>
-
-            <i data-lucide="chevron-down" width="13"></i>
-
-          </div>
-
-        </div>
-
-        <div>
-
-          <div class="control-label">
-            Ethnicity
-          </div>
-
-          <div class="select-wrapper">
-
-            <select id="ethnicity">
-              <option>Any</option>
-              <option>East Asian</option>
-              <option>South Asian</option>
-              <option>Black</option>
-              <option>Latino</option>
-              <option>Middle Eastern</option>
-              <option>European</option>
-              <option>Mixed</option>
-            </select>
-
-            <i data-lucide="chevron-down" width="13"></i>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-
-    <!-- ======================================================
-         GENERATION STATUS
-         ====================================================== -->
-
-    <div
-      id="generationContainer"
-      class="generation-container"
-    >
-
-      <div class="generation-card">
-
-        <div class="generation-header">
-
-          <div class="generation-title">
-
-            <div class="generation-icon">
-              <i
-                id="generationIcon"
-                data-lucide="loader-circle"
-                width="19"
-              ></i>
-            </div>
-
-            <div>
-
-              <strong>
-                Creating your avatar
-              </strong>
-
-              <small id="generationStatus">
-                Preparing your portrait...
-              </small>
-
-            </div>
-
-          </div>
-
-          <div
-            id="progressPercent"
-            class="progress-percent"
-          >
-            0%
-          </div>
-
-        </div>
-
-        <div class="progress">
-
-          <div
-            id="progressBar"
-            class="progress-bar"
-          ></div>
-
-        </div>
-
-        <div class="preview-skeleton">
-
-          <div class="preview-skeleton-content">
-
-            <i data-lucide="image"></i>
-
-            <p>
-              Live canvas preview
-            </p>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </section>
-
-  <!-- ========================================================
-       COMMUNITY SHOWCASE
-       ======================================================== -->
-
-  <section
-    class="showcase"
-    id="showcase"
+    <a href="#showcase">
+      Showcase
+    </a>
+
+    <a href="#api">
+      API
+    </a>
+
+  </div>
+
+  <button
+    class="nav-create"
+    onclick="focusPrompt()"
   >
+    Create Avatar
+    <span>↗</span>
+  </button>
 
-    <div class="section-heading">
+  <button
+    class="mobile-button"
+    onclick="mobileMenu()"
+    aria-label="Open navigation"
+  >
+    ☰
+  </button>
+
+</nav>
+
+
+<!-- ============================================================
+     HERO
+     ============================================================ -->
+
+<main>
+
+<section class="hero" id="create">
+
+  <div class="hero-inner">
+
+    <div class="badge">
+
+      <span class="badge-dot"></span>
+
+      Next-generation human synthesis
+
+    </div>
+
+    <h1>
+
+      Generate
+      <span class="gradient">
+        Photorealistic
+      </span>
+      Humans in One Click
+
+    </h1>
+
+    <p class="hero-description">
+
+      Describe the person you imagine.
+      PersonaAI transforms a single prompt
+      into a cinematic, hyper-photorealistic
+      human portrait.
+
+    </p>
+
+  </div>
+
+
+  <!-- ========================================================
+       GENERATOR
+       ======================================================== -->
+
+  <div class="generator">
+
+    <div class="prompt-border">
+
+      <div class="prompt-box">
+
+        <textarea
+          id="prompt"
+          spellcheck="false"
+          placeholder="30-year-old Japanese architect in a rain-slicked street, 85mm portrait..."
+        ></textarea>
+
+        <div class="prompt-bottom">
+
+          <button
+            id="magicButton"
+            class="magic"
+            onclick="toggleMagic()"
+          >
+
+            ✦
+
+            <span>
+              Magic Prompt
+            </span>
+
+            <span
+              id="magicToggle"
+              class="toggle active"
+            >
+              <span></span>
+            </span>
+
+          </button>
+
+          <button
+            id="generateButton"
+            class="generate"
+            onclick="generateAvatar()"
+          >
+
+            ✦
+
+            <span>
+              Generate Avatar
+            </span>
+
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- STYLE -->
+    <div class="styles">
+
+      <button
+        class="style active"
+        data-style="Studio Portrait"
+      >
+        Studio Portrait
+      </button>
+
+      <button
+        class="style"
+        data-style="Cinematic Street"
+      >
+        Cinematic Street
+      </button>
+
+      <button
+        class="style"
+        data-style="Editorial Fashion"
+      >
+        Editorial Fashion
+      </button>
+
+      <button
+        class="style"
+        data-style="Raw Photography"
+      >
+        Raw Photography
+      </button>
+
+      <button
+        class="style"
+        data-style="Vintage Film"
+      >
+        Vintage Film
+      </button>
+
+    </div>
+
+
+    <!-- OPTIONS -->
+    <div class="options">
 
       <div>
 
-        <div class="section-eyebrow">
-          Community Showcase
+        <div class="label">
+          Aspect Ratio
         </div>
 
-        <h2>
-          Made with PersonaAI
-        </h2>
+        <div class="ratios">
+
+          <button
+            class="ratio active"
+            data-ratio="1:1"
+          >
+            1:1 Portrait
+          </button>
+
+          <button
+            class="ratio"
+            data-ratio="9:16"
+          >
+            9:16 Story
+          </button>
+
+          <button
+            class="ratio"
+            data-ratio="16:9"
+          >
+            16:9 Landscape
+          </button>
+
+        </div>
 
       </div>
 
-      <div class="section-note">
-        Hover any avatar to inspect & remix
+
+      <div>
+
+        <div class="label">
+          Gender
+        </div>
+
+        <div class="select">
+
+          <select id="gender">
+
+            <option value="Any">
+              Any
+            </option>
+
+            <option value="Female">
+              Female
+            </option>
+
+            <option value="Male">
+              Male
+            </option>
+
+            <option value="Androgynous">
+              Androgynous
+            </option>
+
+          </select>
+
+          <span class="select-arrow">
+            ▾
+          </span>
+
+        </div>
+
+      </div>
+
+
+      <div>
+
+        <div class="label">
+          Ethnicity
+        </div>
+
+        <div class="select">
+
+          <select id="ethnicity">
+
+            <option value="Any">
+              Any
+            </option>
+
+            <option value="East Asian">
+              East Asian
+            </option>
+
+            <option value="South Asian">
+              South Asian
+            </option>
+
+            <option value="Black">
+              Black
+            </option>
+
+            <option value="Latino">
+              Latino
+            </option>
+
+            <option value="Middle Eastern">
+              Middle Eastern
+            </option>
+
+            <option value="European">
+              European
+            </option>
+
+            <option value="Mixed">
+              Mixed
+            </option>
+
+          </select>
+
+          <span class="select-arrow">
+            ▾
+          </span>
+
+        </div>
+
       </div>
 
     </div>
 
-    <div class="masonry" id="masonry">
+  </div>
 
-      <!-- Avatar 1 -->
-      <article
-        class="avatar-card"
-        data-name="Tokyo Architect"
-        data-prompt="30-year-old Japanese architect in a rain-slicked Tokyo street, 85mm portrait, natural skin texture, cinematic night lighting."
-        data-image="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=92"
-      >
 
-        <img
-          src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=92"
-          alt="Tokyo Architect"
-          loading="lazy"
-        >
+  <!-- ========================================================
+       GENERATION RESULT
+       ======================================================== -->
 
-        <div class="avatar-overlay">
+  <section
+    id="result"
+    class="result"
+    aria-live="polite"
+  >
 
-          <div class="avatar-name">
-            Tokyo Architect
+    <div class="result-card">
+
+      <div class="result-top">
+
+        <div class="result-title">
+
+          <div class="result-icon">
+            ✦
           </div>
 
-          <div class="avatar-prompt">
-            30-year-old Japanese architect in a rain-slicked Tokyo street, 85mm portrait, natural skin texture, cinematic night lighting.
-          </div>
+          <div>
 
-          <div class="avatar-actions">
+            <strong>
+              Creating your avatar
+            </strong>
 
-            <button
-              class="small-button"
-              onclick="remixCard(this)"
-            >
-              <i data-lucide="refresh-cw" width="12"></i>
-              Remix This Avatar
-            </button>
-
-            <button
-              class="small-button secondary"
-              onclick="openAvatar(this)"
-            >
-              View
-            </button>
+            <span id="generationStatus">
+              Preparing your portrait...
+            </span>
 
           </div>
 
         </div>
 
-      </article>
-
-      <!-- Avatar 2 -->
-      <article
-        class="avatar-card"
-        data-name="Golden Hour Editorial"
-        data-prompt="Confident editorial fashion portrait, warm golden-hour rim light, subtle film grain, authentic skin detail."
-        data-image="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=92"
-      >
-
-        <img
-          src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=92"
-          alt="Golden Hour Editorial"
-          loading="lazy"
+        <div
+          id="progressPercent"
+          class="result-percent"
         >
+          0%
+        </div>
 
-        <div class="avatar-overlay">
+      </div>
 
-          <div class="avatar-name">
-            Golden Hour Editorial
-          </div>
+      <div class="progress-track">
 
-          <div class="avatar-prompt">
-            Confident editorial fashion portrait, warm golden-hour rim light, subtle film grain, authentic skin detail.
-          </div>
+        <div
+          id="progressFill"
+          class="progress-fill"
+        ></div>
 
-          <div class="avatar-actions">
+      </div>
 
-            <button
-              class="small-button"
-              onclick="remixCard(this)"
-            >
-              <i data-lucide="refresh-cw" width="12"></i>
-              Remix This Avatar
-            </button>
+      <div class="render-preview">
 
-            <button
-              class="small-button secondary"
-              onclick="openAvatar(this)"
-            >
-              View
-            </button>
+        <div class="render-center">
 
-          </div>
+          <div class="loader"></div>
+
+          <p>
+            Live rendering canvas
+          </p>
 
         </div>
 
-      </article>
-
-      <!-- Avatar 3 -->
-      <article
-        class="avatar-card"
-        data-name="Cinematic Traveler"
-        data-prompt="Young traveler in a European train station, candid expression, shallow depth of field, 35mm documentary photography."
-        data-image="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=1200&q=92"
-      >
-
-        <img
-          src="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=1200&q=92"
-          alt="Cinematic Traveler"
-          loading="lazy"
-        >
-
-        <div class="avatar-overlay">
-
-          <div class="avatar-name">
-            Cinematic Traveler
-          </div>
-
-          <div class="avatar-prompt">
-            Young traveler in a European train station, candid expression, shallow depth of field, 35mm documentary photography.
-          </div>
-
-          <div class="avatar-actions">
-
-            <button
-              class="small-button"
-              onclick="remixCard(this)"
-            >
-              <i data-lucide="refresh-cw" width="12"></i>
-              Remix This Avatar
-            </button>
-
-            <button
-              class="small-button secondary"
-              onclick="openAvatar(this)"
-            >
-              View
-            </button>
-
-          </div>
-
-        </div>
-
-      </article>
-
-      <!-- Avatar 4 -->
-      <article
-        class="avatar-card"
-        data-name="Studio Minimal"
-        data-prompt="Photorealistic studio headshot, neutral wardrobe, softbox key light, subtle subsurface scattering, Hasselblad X2D 100C."
-        data-image="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1200&q=92"
-      >
-
-        <img
-          src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1200&q=92"
-          alt="Studio Minimal"
-          loading="lazy"
-        >
-
-        <div class="avatar-overlay">
-
-          <div class="avatar-name">
-            Studio Minimal
-          </div>
-
-          <div class="avatar-prompt">
-            Photorealistic studio headshot, neutral wardrobe, softbox key light, subtle subsurface scattering, Hasselblad X2D 100C.
-          </div>
-
-          <div class="avatar-actions">
-
-            <button
-              class="small-button"
-              onclick="remixCard(this)"
-            >
-              <i data-lucide="refresh-cw" width="12"></i>
-              Remix This Avatar
-            </button>
-
-            <button
-              class="small-button secondary"
-              onclick="openAvatar(this)"
-            >
-              View
-            </button>
-
-          </div>
-
-        </div>
-
-      </article>
-
-      <!-- Avatar 5 -->
-      <article
-        class="avatar-card"
-        data-name="Modern Portrait"
-        data-prompt="Modern professional portrait with authentic pores and fine hair detail, clean background, soft volumetric studio lighting."
-        data-image="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=1200&q=92"
-      >
-
-        <img
-          src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=1200&q=92"
-          alt="Modern Portrait"
-          loading="lazy"
-        >
-
-        <div class="avatar-overlay">
-
-          <div class="avatar-name">
-            Modern Portrait
-          </div>
-
-          <div class="avatar-prompt">
-            Modern professional portrait with authentic pores and fine hair detail, clean background, soft volumetric studio lighting.
-          </div>
-
-          <div class="avatar-actions">
-
-            <button
-              class="small-button"
-              onclick="remixCard(this)"
-            >
-              <i data-lucide="refresh-cw" width="12"></i>
-              Remix This Avatar
-            </button>
-
-            <button
-              class="small-button secondary"
-              onclick="openAvatar(this)"
-            >
-              View
-            </button>
-
-          </div>
-
-        </div>
-
-      </article>
-
-      <!-- Avatar 6 -->
-      <article
-        class="avatar-card"
-        data-name="Street Story"
-        data-prompt="Cinematic street portrait at blue hour, expressive eyes, rain reflections, realistic skin, 50mm lens, subtle grain."
-        data-image="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1200&q=92"
-      >
-
-        <img
-          src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1200&q=92"
-          alt="Street Story"
-          loading="lazy"
-        >
-
-        <div class="avatar-overlay">
-
-          <div class="avatar-name">
-            Street Story
-          </div>
-
-          <div class="avatar-prompt">
-            Cinematic street portrait at blue hour, expressive eyes, rain reflections, realistic skin, 50mm lens, subtle grain.
-          </div>
-
-          <div class="avatar-actions">
-
-            <button
-              class="small-button"
-              onclick="remixCard(this)"
-            >
-              <i data-lucide="refresh-cw" width="12"></i>
-              Remix This Avatar
-            </button>
-
-            <button
-              class="small-button secondary"
-              onclick="openAvatar(this)"
-            >
-              View
-            </button>
-
-          </div>
-
-        </div>
-
-      </article>
+      </div>
 
     </div>
 
   </section>
 
-  <!-- ========================================================
-       FOOTER
-       ======================================================== -->
+</section>
 
-  <footer id="api">
 
-    <div class="footer-inner">
+<!-- ============================================================
+     SHOWCASE
+     ============================================================ -->
 
-      <span>
-        PersonaAI · Photorealistic human synthesis
-      </span>
+<section
+  class="showcase"
+  id="showcase"
+>
 
-      <span class="api-ready">
-        <i data-lucide="layers-3" width="13"></i>
-        API-ready for Fal.ai / Replicate
-      </span>
+  <div class="showcase-header">
+
+    <div>
+
+      <div class="kicker">
+        Community Showcase
+      </div>
+
+      <h2>
+        Made with PersonaAI
+      </h2>
 
     </div>
 
-  </footer>
+    <div class="showcase-note">
+      Hover an avatar to inspect and remix
+    </div>
 
-  <!-- ========================================================
-       AVATAR MODAL
-       ======================================================== -->
+  </div>
 
-  <div
-    id="avatarModal"
-    class="modal"
-    onclick="backgroundClose(event)"
-  >
 
-    <div class="modal-content">
+  <div class="gallery" id="gallery">
 
-      <div class="modal-top">
+
+    <!-- AVATAR 1 -->
+
+    <article
+      class="avatar"
+      data-name="Tokyo Architect"
+      data-prompt="30-year-old Japanese architect in a rain-slicked Tokyo street, 85mm portrait, natural skin texture, cinematic night lighting."
+      data-image="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1000&q=90"
+    >
+
+      <img
+        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1000&q=90"
+        alt="Tokyo Architect"
+        loading="lazy"
+      >
+
+      <div class="avatar-overlay">
+
+        <div class="avatar-name">
+          Tokyo Architect
+        </div>
+
+        <div class="avatar-prompt">
+          30-year-old Japanese architect in a rain-slicked Tokyo street, 85mm portrait, natural skin texture, cinematic night lighting.
+        </div>
+
+        <div class="avatar-buttons">
+
+          <button
+            class="avatar-button"
+            onclick="remixAvatar(this)"
+          >
+            ↻ Remix
+          </button>
+
+          <button
+            class="avatar-button dark"
+            onclick="openAvatar(this)"
+          >
+            View
+          </button>
+
+        </div>
+
+      </div>
+
+    </article>
+
+
+    <!-- AVATAR 2 -->
+
+    <article
+      class="avatar"
+      data-name="Golden Hour Editorial"
+      data-prompt="Confident editorial fashion portrait during golden hour, warm rim light, authentic skin texture, subtle film grain."
+      data-image="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1000&q=90"
+    >
+
+      <img
+        src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1000&q=90"
+        alt="Golden Hour Editorial"
+        loading="lazy"
+      >
+
+      <div class="avatar-overlay">
+
+        <div class="avatar-name">
+          Golden Hour Editorial
+        </div>
+
+        <div class="avatar-prompt">
+          Confident editorial fashion portrait during golden hour, warm rim light, authentic skin texture, subtle film grain.
+        </div>
+
+        <div class="avatar-buttons">
+
+          <button
+            class="avatar-button"
+            onclick="remixAvatar(this)"
+          >
+            ↻ Remix
+          </button>
+
+          <button
+            class="avatar-button dark"
+            onclick="openAvatar(this)"
+          >
+            View
+          </button>
+
+        </div>
+
+      </div>
+
+    </article>
+
+
+    <!-- AVATAR 3 -->
+
+    <article
+      class="avatar"
+      data-name="Cinematic Traveler"
+      data-prompt="Young traveler standing inside a European railway station, candid expression, 35mm documentary photography, shallow depth of field."
+      data-image="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=1000&q=90"
+    >
+
+      <img
+        src="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=1000&q=90"
+        alt="Cinematic Traveler"
+        loading="lazy"
+      >
+
+      <div class="avatar-overlay">
+
+        <div class="avatar-name">
+          Cinematic Traveler
+        </div>
+
+        <div class="avatar-prompt">
+          Young traveler standing inside a European railway station, candid expression, 35mm documentary photography, shallow depth of field.
+        </div>
+
+        <div class="avatar-buttons">
+
+          <button
+            class="avatar-button"
+            onclick="remixAvatar(this)"
+          >
+            ↻ Remix
+          </button>
+
+          <button
+            class="avatar-button dark"
+            onclick="openAvatar(this)"
+          >
+            View
+          </button>
+
+        </div>
+
+      </div>
+
+    </article>
+
+
+    <!-- AVATAR 4 -->
+
+    <article
+      class="avatar"
+      data-name="Studio Minimal"
+      data-prompt="Photorealistic professional studio headshot, softbox key light, realistic pores, fine hair detail, Hasselblad X2D 100C."
+      data-image="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1000&q=90"
+    >
+
+      <img
+        src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1000&q=90"
+        alt="Studio Minimal"
+        loading="lazy"
+      >
+
+      <div class="avatar-overlay">
+
+        <div class="avatar-name">
+          Studio Minimal
+        </div>
+
+        <div class="avatar-prompt">
+          Photorealistic professional studio headshot, softbox key light, realistic pores, fine hair detail, Hasselblad X2D 100C.
+        </div>
+
+        <div class="avatar-buttons">
+
+          <button
+            class="avatar-button"
+            onclick="remixAvatar(this)"
+          >
+            ↻ Remix
+          </button>
+
+          <button
+            class="avatar-button dark"
+            onclick="openAvatar(this)"
+          >
+            View
+          </button>
+
+        </div>
+
+      </div>
+
+    </article>
+
+
+    <!-- AVATAR 5 -->
+
+    <article
+      class="avatar"
+      data-name="Modern Portrait"
+      data-prompt="Modern professional portrait with authentic pores, fine hair detail, soft volumetric studio lighting and natural expression."
+      data-image="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=1000&q=90"
+    >
+
+      <img
+        src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=1000&q=90"
+        alt="Modern Portrait"
+        loading="lazy"
+      >
+
+      <div class="avatar-overlay">
+
+        <div class="avatar-name">
+          Modern Portrait
+        </div>
+
+        <div class="avatar-prompt">
+          Modern professional portrait with authentic pores, fine hair detail, soft volumetric studio lighting and natural expression.
+        </div>
+
+        <div class="avatar-buttons">
+
+          <button
+            class="avatar-button"
+            onclick="remixAvatar(this)"
+          >
+            ↻ Remix
+          </button>
+
+          <button
+            class="avatar-button dark"
+            onclick="openAvatar(this)"
+          >
+            View
+          </button>
+
+        </div>
+
+      </div>
+
+    </article>
+
+
+    <!-- AVATAR 6 -->
+
+    <article
+      class="avatar"
+      data-name="Street Story"
+      data-prompt="Cinematic street portrait at blue hour, expressive eyes, rain reflections, realistic skin, 50mm lens and subtle film grain."
+      data-image="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1000&q=90"
+    >
+
+      <img
+        src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1000&q=90"
+        alt="Street Story"
+        loading="lazy"
+      >
+
+      <div class="avatar-overlay">
+
+        <div class="avatar-name">
+          Street Story
+        </div>
+
+        <div class="avatar-prompt">
+          Cinematic street portrait at blue hour, expressive eyes, rain reflections, realistic skin, 50mm lens and subtle film grain.
+        </div>
+
+        <div class="avatar-buttons">
+
+          <button
+            class="avatar-button"
+            onclick="remixAvatar(this)"
+          >
+            ↻ Remix
+          </button>
+
+          <button
+            class="avatar-button dark"
+            onclick="openAvatar(this)"
+          >
+            View
+          </button>
+
+        </div>
+
+      </div>
+
+    </article>
+
+  </div>
+
+</section>
+
+</main>
+
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+
+<footer
+  class="footer"
+  id="api"
+>
+
+  <div class="footer-inner">
+
+    <span>
+      PersonaAI · Human avatar generation
+    </span>
+
+    <span class="api-status">
+
+      <span class="status-dot"></span>
+
+      API integration ready
+
+    </span>
+
+  </div>
+
+</footer>
+
+
+<!-- ============================================================
+     MODAL
+     ============================================================ -->
+
+<div
+  id="modal"
+  class="modal"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Avatar preview"
+  onclick="closeFromBackground(event)"
+>
+
+  <div class="modal-box">
+
+    <div class="modal-header">
+
+      <div>
+
+        <strong id="modalName">
+          Avatar
+        </strong>
+
+        <span>
+          PersonaAI HD Preview
+        </span>
+
+      </div>
+
+      <button
+        class="close"
+        onclick="closeModal()"
+        aria-label="Close"
+      >
+        ×
+      </button>
+
+    </div>
+
+
+    <div class="modal-grid">
+
+      <div class="modal-photo">
+
+        <img
+          id="modalImage"
+          src=""
+          alt=""
+        >
+
+      </div>
+
+
+      <div class="modal-info">
+
+        <div class="info-label">
+          Prompt
+        </div>
+
+        <div
+          id="modalPrompt"
+          class="info-prompt"
+        ></div>
+
+
+        <div class="modal-actions">
+
+          <button
+            class="modal-action"
+            onclick="copyPrompt()"
+          >
+            ⧉ Copy Prompt
+          </button>
+
+          <button
+            class="modal-action primary"
+            onclick="variation()"
+          >
+            ↻ Generate Variations
+          </button>
+
+          <button
+            class="modal-action"
+            onclick="downloadAvatar()"
+          >
+            ↓ HD Download
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ============================================================
+     TOAST
+     ============================================================ -->
+
+<div
+  id="toast"
+  class="toast"
+>
+  <span>✓</span>
+  <span id="toastMessage">
+    Done
+  </span>
+</div>
+
+
+<script>
+
+/* ============================================================
+   PERSONAAI JAVASCRIPT
+   ============================================================ */
+
+
+/* ------------------------------------------------------------
+   STATE
+   ------------------------------------------------------------ */
+
+let magicEnabled = true;
+
+let selectedStyle =
+  "Studio Portrait";
+
+let selectedRatio =
+  "1:1";
+
+let currentAvatar = {
+  name: "",
+  prompt: "",
+  image: ""
+};
+
+
+/* ------------------------------------------------------------
+   PROMPT PLACEHOLDERS
+   ------------------------------------------------------------ */
+
+const placeholders = [
+
+  "30-year-old Japanese architect in a rain-slicked street, 85mm portrait...",
+
+  "Creative director in a sunlit brutalist studio, editorial fashion photography...",
+
+  "Young marine biologist standing on a foggy coastline, documentary portrait...",
+
+  "Elegant Parisian fashion portrait at blue hour, vintage 35mm film...",
+
+  "Technology founder in a modern glass office, cinematic natural light..."
+
+];
+
+let placeholderIndex = 0;
+
+const promptElement =
+  document.getElementById("prompt");
+
+setInterval(function () {
+
+  if (
+    promptElement.value.trim() !== "" ||
+    document.activeElement === promptElement
+  ) {
+    return;
+  }
+
+  promptElement.style.opacity =
+    ".3";
+
+  setTimeout(function () {
+
+    placeholderIndex =
+      (placeholderIndex + 1)
+      % placeholders.length;
+
+    promptElement.placeholder =
+      placeholders[placeholderIndex];
+
+    promptElement.style.opacity =
+      "1";
+
+  }, 220);
+
+}, 3000);
+
+
+/* ------------------------------------------------------------
+   FOCUS PROMPT
+   ------------------------------------------------------------ */
+
+function focusPrompt() {
+
+  promptElement.focus();
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+
+}
+
+
+/* ------------------------------------------------------------
+   MAGIC PROMPT
+   ------------------------------------------------------------ */
+
+function toggleMagic() {
+
+  magicEnabled =
+    !magicEnabled;
+
+  const button =
+    document.getElementById(
+      "magicButton"
+    );
+
+  const toggle =
+    document.getElementById(
+      "magicToggle"
+    );
+
+  if (magicEnabled) {
+
+    button.classList.remove(
+      "off"
+    );
+
+    toggle.classList.add(
+      "active"
+    );
+
+    showToast(
+      "Magic Prompt enabled"
+    );
+
+  } else {
+
+    button.classList.add(
+      "off"
+    );
+
+    toggle.classList.remove(
+      "active"
+    );
+
+    showToast(
+      "Magic Prompt disabled"
+    );
+
+  }
+
+}
+
+
+/* ------------------------------------------------------------
+   STYLE SELECTION
+   ------------------------------------------------------------ */
+
+document
+  .querySelectorAll(".style")
+  .forEach(function (button) {
+
+    button.addEventListener(
+      "click",
+      function () {
+
+        document
+          .querySelectorAll(".style")
+          .forEach(function (item) {
+
+            item.classList.remove(
+              "active"
+            );
+
+          });
+
+        button.classList.add(
+          "active"
+        );
+
+        selectedStyle =
+          button.dataset.style;
+
+      }
+    );
+
+  });
+
+
+/* ------------------------------------------------------------
+   RATIO SELECTION
+   ------------------------------------------------------------ */
+
+document
+  .querySelectorAll(".ratio")
+  .forEach(function (button) {
+
+    button.addEventListener(
+      "click",
+      function () {
+
+        document
+          .querySelectorAll(".ratio")
+          .forEach(function (item) {
+
+            item.classList.remove(
+              "active"
+            );
+
+          });
+
+        button.classList.add(
+          "active"
+        );
+
+        selectedRatio =
+          button.dataset.ratio;
+
+      }
+    );
+
+  });
+
+
+/* ------------------------------------------------------------
+   MAGIC ENHANCEMENT TEXT
+   ------------------------------------------------------------ */
+
+const magicTerms =
+  "hyper-photorealistic, authentic natural skin texture, visible fine pores, subtle subsurface scattering, realistic individual hair strands, physically accurate eyes, natural facial micro-detail, volumetric lighting, professional studio illumination, Hasselblad X2D 100C, 85mm lens, shallow depth of field, cinematic color science, realistic skin tones";
+
+
+/* ------------------------------------------------------------
+   GENERATE
+   ------------------------------------------------------------ */
+
+function generateAvatar() {
+
+  const raw =
+    promptElement.value.trim();
+
+  if (!raw) {
+
+    showToast(
+      "Please describe the human you want to create."
+    );
+
+    promptElement.focus();
+
+    return;
+
+  }
+
+
+  const gender =
+    document.getElementById(
+      "gender"
+    ).value;
+
+  const ethnicity =
+    document.getElementById(
+      "ethnicity"
+    ).value;
+
+
+  let finalPrompt =
+    raw;
+
+
+  if (selectedStyle) {
+
+    finalPrompt +=
+      ", " +
+      selectedStyle;
+
+  }
+
+
+  if (gender !== "Any") {
+
+    finalPrompt +=
+      ", " +
+      gender;
+
+  }
+
+
+  if (ethnicity !== "Any") {
+
+    finalPrompt +=
+      ", " +
+      ethnicity;
+
+  }
+
+
+  finalPrompt +=
+    ", " +
+    selectedRatio;
+
+
+  if (magicEnabled) {
+
+    finalPrompt +=
+      ", " +
+      magicTerms;
+
+  }
+
+
+  const result =
+    document.getElementById(
+      "result"
+    );
+
+  const generateButton =
+    document.getElementById(
+      "generateButton"
+    );
+
+  const status =
+    document.getElementById(
+      "generationStatus"
+    );
+
+  const fill =
+    document.getElementById(
+      "progressFill"
+    );
+
+  const percent =
+    document.getElementById(
+      "progressPercent"
+    );
+
+
+  result.classList.add(
+    "visible"
+  );
+
+  generateButton.disabled =
+    true;
+
+  generateButton.innerHTML =
+    "◌ Generating...";
+
+  fill.style.width =
+    "0%";
+
+  percent.textContent =
+    "0%";
+
+
+  const steps = [
+
+    {
+      progress: 8,
+      text: "Analyzing your prompt..."
+    },
+
+    {
+      progress: 18,
+      text: "Designing facial structure..."
+    },
+
+    {
+      progress: 31,
+      text: "Generating realistic anatomy..."
+    },
+
+    {
+      progress: 47,
+      text: "Rendering skin pores..."
+    },
+
+    {
+      progress: 61,
+      text: "Generating individual hair detail..."
+    },
+
+    {
+      progress: 75,
+      text: "Balancing volumetric light..."
+    },
+
+    {
+      progress: 87,
+      text: "Refining eyes and facial micro-detail..."
+    },
+
+    {
+      progress: 96,
+      text: "Applying photographic color science..."
+    },
+
+    {
+      progress: 100,
+      text: "Avatar ready."
+    }
+
+  ];
+
+
+  let index = 0;
+
+
+  const timer =
+    setInterval(function () {
+
+      const step =
+        steps[index];
+
+      if (!step) {
+
+        clearInterval(timer);
+
+        finishGeneration(
+          finalPrompt
+        );
+
+        return;
+
+      }
+
+
+      fill.style.width =
+        step.progress + "%";
+
+      percent.textContent =
+        step.progress + "%";
+
+      status.textContent =
+        step.text;
+
+      index++;
+
+    }, 430);
+
+}
+
+
+/* ------------------------------------------------------------
+   FINISH GENERATION
+   ------------------------------------------------------------ */
+
+function finishGeneration(
+  finalPrompt
+) {
+
+  const result =
+    document.getElementById(
+      "result"
+    );
+
+  const card =
+    result.querySelector(
+      ".result-card"
+    );
+
+  const button =
+    document.getElementById(
+      "generateButton"
+    );
+
+  const status =
+    document.getElementById(
+      "generationStatus"
+    );
+
+
+  status.textContent =
+    "Demo avatar generated successfully.";
+
+
+  /*
+   * WORKING DEMO IMAGE
+   *
+   * In production replace this URL with
+   * the image URL returned by Fal.ai,
+   * Replicate, or your own API.
+   */
+
+  const imageUrl =
+    getDemoImage();
+
+
+  card.innerHTML = `
+
+    <div class="result-top">
+
+      <div class="result-title">
+
+        <div class="result-icon">
+          ✓
+        </div>
 
         <div>
 
-          <div
-            id="modalName"
-            class="modal-name"
-          >
-            Avatar
-          </div>
+          <strong>
+            Avatar Ready
+          </strong>
 
-          <div class="modal-subtitle">
-            PersonaAI HD Preview
-          </div>
+          <span>
+            Your PersonaAI demo portrait is ready.
+          </span>
 
         </div>
-
-        <button
-          class="close-modal"
-          onclick="closeModal()"
-        >
-          <i data-lucide="x" width="17"></i>
-        </button>
 
       </div>
 
-      <div class="modal-grid">
-
-        <div class="modal-image">
-
-          <img
-            id="modalImage"
-            src=""
-            alt=""
-          >
-
-        </div>
-
-        <div class="modal-details">
-
-          <div class="modal-label">
-            Prompt
-          </div>
-
-          <div
-            id="modalPrompt"
-            class="modal-prompt"
-          ></div>
-
-          <div class="modal-buttons">
-
-            <button
-              class="modal-button"
-              onclick="copyModalPrompt()"
-            >
-              <i data-lucide="copy" width="14"></i>
-              Copy Prompt
-            </button>
-
-            <button
-              class="modal-button primary"
-              onclick="generateVariation()"
-            >
-              <i data-lucide="refresh-cw" width="14"></i>
-              Generate Variations
-            </button>
-
-            <button
-              class="modal-button"
-              onclick="downloadCurrentAvatar()"
-            >
-              <i data-lucide="download" width="14"></i>
-              HD Download
-            </button>
-
-          </div>
-
-        </div>
-
+      <div class="result-percent">
+        100%
       </div>
 
     </div>
 
-  </div>
+    <div
+      style="
+        margin-top:15px;
+        overflow:hidden;
+        border-radius:17px;
+        background:#050507;
+      "
+    >
 
-  <!-- Toast -->
-  <div
-    id="toast"
-    class="toast"
-  >
-    <i data-lucide="check" width="14"></i>
-    <span id="toastText">
-      Done
-    </span>
-  </div>
+      <img
+        src="${imageUrl}"
+        alt="Generated PersonaAI avatar"
+        style="
+          display:block;
+          width:100%;
+          max-height:650px;
+          object-fit:contain;
+        "
+      >
 
-  <!-- ========================================================
-       JAVASCRIPT
-       ======================================================== -->
+    </div>
 
-  <script>
+    <div
+      style="
+        display:flex;
+        flex-wrap:wrap;
+        gap:8px;
+        margin-top:12px;
+      "
+    >
 
-    /* ========================================================
-       INITIALIZE ICONS
-       ======================================================== */
+      <button
+        class="modal-action"
+        style="flex:1;"
+        onclick="copyGeneratedPrompt()"
+      >
+        ⧉ Copy Prompt
+      </button>
 
-    lucide.createIcons();
+      <button
+        class="modal-action primary"
+        style="flex:1;"
+        onclick="openGeneratedAvatar()"
+      >
+        View Fullscreen
+      </button>
 
+    </div>
 
-    /* ========================================================
-       PROMPT PLACEHOLDER CYCLING
-       ======================================================== */
+  `;
 
-    const prompts = [
 
-      "30-year-old Japanese architect in a rain-slicked street, 85mm portrait...",
+  button.disabled =
+    false;
 
-      "Confident creative director in a sunlit brutalist studio, editorial fashion...",
+  button.innerHTML =
+    "✦ Generate Avatar";
 
-      "Young marine biologist on a foggy coastline, documentary photography...",
 
-      "Elegant fashion portrait in Paris at blue hour, vintage 35mm film..."
+  currentAvatar = {
 
-    ];
+    name:
+      "PersonaAI Generated Avatar",
 
-    let placeholderIndex = 0;
+    prompt:
+      finalPrompt,
 
-    const promptInput =
-      document.getElementById("prompt");
+    image:
+      imageUrl
 
-    setInterval(() => {
+  };
 
-      if (
-        document.activeElement === promptInput ||
-        promptInput.value.trim() !== ""
-      ) {
-        return;
-      }
 
-      promptInput.style.opacity = ".3";
+  showToast(
+    "Avatar generated successfully"
+  );
 
-      setTimeout(() => {
+}
 
-        placeholderIndex =
-          (placeholderIndex + 1) %
-          prompts.length;
 
-        promptInput.placeholder =
-          prompts[placeholderIndex];
+/* ------------------------------------------------------------
+   DEMO IMAGE
+   ------------------------------------------------------------ */
 
-        promptInput.style.opacity = "1";
+function getDemoImage() {
 
-      }, 250);
+  /*
+   * Uses a public Unsplash image only
+   * for the standalone demo.
+   *
+   * Replace this function with your
+   * actual AI generation request.
+   */
 
-    }, 3200);
+  const images = [
 
+    "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=1200&q=92",
 
-    /* ========================================================
-       MAGIC PROMPT
-       ======================================================== */
+    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1200&q=92",
 
-    let magicEnabled = true;
+    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=1200&q=92",
 
-    const magicEnhancement =
-      "hyper-photorealistic, authentic natural skin texture, visible fine pores, subtle subsurface scattering, realistic individual hairs, physically accurate eyes, volumetric studio lighting, Hasselblad X2D 100C, 85mm lens, shallow depth of field, cinematic color science";
+    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1200&q=92"
 
-    function toggleMagic() {
+  ];
 
-      magicEnabled =
-        !magicEnabled;
+  return images[
+    Math.floor(
+      Math.random() *
+      images.length
+    )
+  ];
 
-      const button =
-        document.getElementById("magicButton");
+}
 
-      const switchElement =
-        document.getElementById("magicSwitch");
 
-      if (magicEnabled) {
+/* ============================================================
+   PRODUCTION API INTEGRATION
+   ============================================================
 
-        button.classList.remove("off");
+   Replace getDemoImage() with something like:
 
-        switchElement.classList.add("active");
+   async function generateWithBackend(prompt) {
 
-      } else {
+     const response =
+       await fetch("/api/generate", {
+         method: "POST",
 
-        button.classList.add("off");
+         headers: {
+           "Content-Type": "application/json"
+         },
 
-        switchElement.classList.remove("active");
+         body: JSON.stringify({
+           prompt: prompt,
+           aspect_ratio: selectedRatio,
+           style: selectedStyle,
+           gender:
+             document.getElementById("gender").value,
+           ethnicity:
+             document.getElementById("ethnicity").value
+         })
+       });
 
-      }
+     if (!response.ok) {
+       throw new Error(
+         "Generation request failed."
+       );
+     }
 
-    }
+     const data =
+       await response.json();
 
+     return data.imageUrl;
+   }
 
-    /* ========================================================
-       STYLE PILLS
-       ======================================================== */
+   IMPORTANT:
+   Never place your Fal.ai or Replicate
+   API secret in this HTML file.
 
-    document
-      .querySelectorAll(".style-pill")
-      .forEach(button => {
+   Your server / Supabase Edge Function /
+   Next.js API route should hold the secret.
 
-        button.addEventListener("click", () => {
+   ============================================================ */
 
-          document
-            .querySelectorAll(".style-pill")
-            .forEach(item =>
-              item.classList.remove("active")
-            );
 
-          button.classList.add("active");
+/* ------------------------------------------------------------
+   OPEN AVATAR
+   ------------------------------------------------------------ */
 
-        });
+function openAvatar(button) {
 
-      });
+  const card =
+    button.closest(
+      ".avatar"
+    );
 
+  currentAvatar = {
 
-    /* ========================================================
-       ASPECT RATIO
-       ======================================================== */
+    name:
+      card.dataset.name,
 
-    let selectedRatio = "1:1";
+    prompt:
+      card.dataset.prompt,
 
-    document
-      .querySelectorAll(".ratio")
-      .forEach(button => {
+    image:
+      card.dataset.image
 
-        button.addEventListener("click", () => {
+  };
 
-          document
-            .querySelectorAll(".ratio")
-            .forEach(item =>
-              item.classList.remove("active")
-            );
 
-          button.classList.add("active");
+  document.getElementById(
+    "modalName"
+  ).textContent =
+    currentAvatar.name;
 
-          selectedRatio =
-            button.dataset.ratio;
 
-        });
+  document.getElementById(
+    "modalPrompt"
+  ).textContent =
+    currentAvatar.prompt;
 
-      });
 
+  document.getElementById(
+    "modalImage"
+  ).src =
+    currentAvatar.image;
 
-    /* ========================================================
-       GENERATION
-       ======================================================== */
 
-    const generationSteps = [
+  document.getElementById(
+    "modalImage"
+  ).alt =
+    currentAvatar.name;
 
-      [8, "Understanding facial structure..."],
 
-      [20, "Building realistic anatomy..."],
+  document
+    .getElementById("modal")
+    .classList.add(
+      "open"
+    );
 
-      [36, "Rendering skin pores..."],
 
-      [53, "Generating individual hair detail..."],
+  document.body.style.overflow =
+    "hidden";
 
-      [68, "Balancing volumetric light..."],
+}
 
-      [81, "Refining eyes and facial micro-detail..."],
 
-      [93, "Applying photographic color science..."],
+/* ------------------------------------------------------------
+   OPEN GENERATED AVATAR
+   ------------------------------------------------------------ */
 
-      [100, "Finalizing HD avatar..."]
+function openGeneratedAvatar() {
 
-    ];
+  document.getElementById(
+    "modalName"
+  ).textContent =
+    currentAvatar.name;
 
-    let generatedPrompt = "";
 
-    function generateAvatar() {
+  document.getElementById(
+    "modalPrompt"
+  ).textContent =
+    currentAvatar.prompt;
 
-      const rawPrompt =
-        promptInput.value.trim();
 
-      if (!rawPrompt) {
+  document.getElementById(
+    "modalImage"
+  ).src =
+    currentAvatar.image;
 
-        showToast(
-          "Describe the human you want to create."
-        );
 
-        promptInput.focus();
+  document.getElementById(
+    "modalImage"
+  ).alt =
+    currentAvatar.name;
 
-        return;
 
-      }
+  document
+    .getElementById("modal")
+    .classList.add(
+      "open"
+    );
 
-      const activeStyle =
-        document.querySelector(
-          ".style-pill.active"
-        )?.textContent || "Studio Portrait";
 
-      const gender =
-        document.getElementById("gender").value;
+  document.body.style.overflow =
+    "hidden";
 
-      const ethnicity =
-        document.getElementById("ethnicity").value;
+}
 
-      generatedPrompt =
-        rawPrompt +
-        ", " +
-        activeStyle +
-        ", " +
-        selectedRatio +
-        ", " +
-        gender +
-        ", " +
-        ethnicity;
 
-      if (magicEnabled) {
+/* ------------------------------------------------------------
+   CLOSE MODAL
+   ------------------------------------------------------------ */
 
-        generatedPrompt +=
-          ", " +
-          magicEnhancement;
+function closeModal() {
 
-      }
+  document
+    .getElementById("modal")
+    .classList.remove(
+      "open"
+    );
 
-      const container =
-        document.getElementById(
-          "generationContainer"
-        );
+  document.body.style.overflow =
+    "";
 
-      const button =
-        document.getElementById(
-          "generateButton"
-        );
+}
 
-      const status =
-        document.getElementById(
-          "generationStatus"
-        );
 
-      const progressBar =
-        document.getElementById(
-          "progressBar"
-        );
+function closeFromBackground(
+  event
+) {
 
-      const progressPercent =
-        document.getElementById(
-          "progressPercent"
-        );
+  if (
+    event.target.id ===
+    "modal"
+  ) {
 
-      container.classList.add("visible");
+    closeModal();
 
-      button.disabled = true;
+  }
 
-      button.innerHTML =
-        '<i data-lucide="loader-circle" width="15" class="spin"></i><span>Generating...</span>';
+}
 
-      lucide.createIcons();
 
-      let step = 0;
+/* ------------------------------------------------------------
+   REMIX
+   ------------------------------------------------------------ */
 
-      progressBar.style.width = "0%";
+function remixAvatar(button) {
 
-      progressPercent.textContent =
-        "0%";
+  const card =
+    button.closest(
+      ".avatar"
+    );
 
-      status.textContent =
-        "Preparing your portrait...";
+  promptElement.value =
+    card.dataset.prompt;
 
-      const interval =
-        setInterval(() => {
 
-          const current =
-            generationSteps[step];
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
 
-          if (!current) {
 
-            clearInterval(interval);
+  setTimeout(function () {
 
-            finishGeneration();
+    promptElement.focus();
 
-            return;
+  }, 550);
 
-          }
 
-          const percentage =
-            current[0];
+  showToast(
+    "Prompt loaded into PersonaAI"
+  );
 
-          const message =
-            current[1];
+}
 
-          progressBar.style.width =
-            percentage + "%";
 
-          progressPercent.textContent =
-            percentage + "%";
+/* ------------------------------------------------------------
+   VARIATION
+   ------------------------------------------------------------ */
 
-          status.textContent =
-            message;
+function variation() {
 
-          step++;
+  promptElement.value =
+    currentAvatar.prompt;
 
-        }, 550);
 
-    }
+  closeModal();
 
 
-    function finishGeneration() {
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
 
-      const button =
-        document.getElementById(
-          "generateButton"
-        );
 
-      const status =
-        document.getElementById(
-          "generationStatus"
-        );
+  setTimeout(function () {
 
-      status.textContent =
-        "Avatar ready — connect your image API to display the generated result.";
+    promptElement.focus();
 
-      button.disabled = false;
+  }, 500);
 
-      button.innerHTML =
-        '<i data-lucide="sparkles" width="15"></i><span>Generate Avatar</span>';
 
-      lucide.createIcons();
+  showToast(
+    "Variation prompt loaded"
+  );
 
-      showToast(
-        "Generation complete"
+}
+
+
+/* ------------------------------------------------------------
+   COPY PROMPT
+   ------------------------------------------------------------ */
+
+async function copyPrompt() {
+
+  try {
+
+    await navigator.clipboard.writeText(
+      currentAvatar.prompt
+    );
+
+    showToast(
+      "Prompt copied"
+    );
+
+  } catch {
+
+    fallbackCopy(
+      currentAvatar.prompt
+    );
+
+  }
+
+}
+
+
+async function copyGeneratedPrompt() {
+
+  await copyPrompt();
+
+}
+
+
+function fallbackCopy(
+  text
+) {
+
+  const textarea =
+    document.createElement(
+      "textarea"
+    );
+
+  textarea.value =
+    text;
+
+  textarea.style.position =
+    "fixed";
+
+  textarea.style.opacity =
+    "0";
+
+  document.body.appendChild(
+    textarea
+  );
+
+  textarea.select();
+
+  try {
+
+    document.execCommand(
+      "copy"
+    );
+
+    showToast(
+      "Prompt copied"
+    );
+
+  } catch {
+
+    showToast(
+      "Unable to copy automatically"
+    );
+
+  }
+
+  textarea.remove();
+
+}
+
+
+/* ------------------------------------------------------------
+   DOWNLOAD
+   ------------------------------------------------------------ */
+
+async function downloadAvatar() {
+
+  try {
+
+    const response =
+      await fetch(
+        currentAvatar.image
       );
 
-      /*
-       * ======================================================
-       * BACKEND INTEGRATION POINT
-       * ======================================================
-       *
-       * Replace the simulation above with:
-       *
-       * fetch("/api/generate", {
-       *   method: "POST",
-       *   headers: {
-       *     "Content-Type": "application/json"
-       *   },
-       *   body: JSON.stringify({
-       *     prompt: generatedPrompt,
-       *     ratio: selectedRatio,
-       *     style: document.querySelector(".style-pill.active").textContent,
-       *     gender: document.getElementById("gender").value,
-       *     ethnicity: document.getElementById("ethnicity").value
-       *   })
-       * })
-       *
-       * Your secure server endpoint can then call:
-       *
-       * Fal.ai
-       * OR
-       * Replicate
-       *
-       * Never expose your API secret in this HTML file.
-       */
-    }
+    if (!response.ok) {
 
-
-    /* ========================================================
-       REMIX
-       ======================================================== */
-
-    function remixCard(button) {
-
-      const card =
-        button.closest(".avatar-card");
-
-      const prompt =
-        card.dataset.prompt;
-
-      promptInput.value =
-        prompt;
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-
-      setTimeout(() => {
-
-        promptInput.focus();
-
-      }, 600);
-
-      showToast(
-        "Prompt remixed into generator"
-      );
-
-    }
-
-
-    /* ========================================================
-       OPEN AVATAR
-       ======================================================== */
-
-    let currentAvatar = {
-      name: "",
-      prompt: "",
-      image: ""
-    };
-
-    function openAvatar(button) {
-
-      const card =
-        button.closest(".avatar-card");
-
-      currentAvatar = {
-
-        name:
-          card.dataset.name,
-
-        prompt:
-          card.dataset.prompt,
-
-        image:
-          card.dataset.image
-
-      };
-
-      document.getElementById(
-        "modalName"
-      ).textContent =
-        currentAvatar.name;
-
-      document.getElementById(
-        "modalPrompt"
-      ).textContent =
-        currentAvatar.prompt;
-
-      document.getElementById(
-        "modalImage"
-      ).src =
-        currentAvatar.image;
-
-      document.getElementById(
-        "modalImage"
-      ).alt =
-        currentAvatar.name;
-
-      document
-        .getElementById("avatarModal")
-        .classList.add("visible");
-
-      document.body.style.overflow =
-        "hidden";
-
-    }
-
-
-    function closeModal() {
-
-      document
-        .getElementById("avatarModal")
-        .classList.remove("visible");
-
-      document.body.style.overflow =
-        "";
-
-    }
-
-
-    function backgroundClose(event) {
-
-      if (
-        event.target.id ===
-        "avatarModal"
-      ) {
-
-        closeModal();
-
-      }
-
-    }
-
-
-    /* ========================================================
-       COPY PROMPT
-       ======================================================== */
-
-    async function copyModalPrompt() {
-
-      try {
-
-        await navigator.clipboard.writeText(
-          currentAvatar.prompt
-        );
-
-        showToast(
-          "Prompt copied"
-        );
-
-      } catch {
-
-        showToast(
-          "Copy failed — select the prompt manually."
-        );
-
-      }
-
-    }
-
-
-    /* ========================================================
-       GENERATE VARIATION
-       ======================================================== */
-
-    function generateVariation() {
-
-      promptInput.value =
-        currentAvatar.prompt;
-
-      closeModal();
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-
-      setTimeout(() => {
-
-        promptInput.focus();
-
-      }, 600);
-
-      showToast(
-        "Variation prompt loaded"
+      throw new Error(
+        "Image unavailable"
       );
 
     }
 
+    const blob =
+      await response.blob();
 
-    /* ========================================================
-       HD DOWNLOAD
-       ======================================================== */
+    const objectUrl =
+      URL.createObjectURL(
+        blob
+      );
 
-    async function downloadCurrentAvatar() {
+    const link =
+      document.createElement(
+        "a"
+      );
 
-      try {
+    link.href =
+      objectUrl;
 
-        const response =
-          await fetch(
-            currentAvatar.image
-          );
+    link.download =
+      "personaai-avatar.jpg";
 
-        const blob =
-          await response.blob();
+    document.body.appendChild(
+      link
+    );
 
-        const url =
-          URL.createObjectURL(blob);
+    link.click();
 
-        const link =
-          document.createElement("a");
+    link.remove();
 
-        link.href = url;
+    URL.revokeObjectURL(
+      objectUrl
+    );
 
-        link.download =
-          "personaai-" +
-          currentAvatar.name
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-") +
-          ".jpg";
+    showToast(
+      "HD download started"
+    );
 
-        document.body.appendChild(link);
+  } catch {
 
-        link.click();
+    /*
+     * Some remote image hosts
+     * prevent browser downloads.
+     */
 
-        link.remove();
+    window.open(
+      currentAvatar.image,
+      "_blank"
+    );
 
-        URL.revokeObjectURL(url);
+    showToast(
+      "Opening image"
+    );
 
-        showToast(
-          "HD download started"
-        );
+  }
 
-      } catch {
-
-        /*
-         * Fallback if remote image
-         * blocks browser download.
-         */
-
-        window.open(
-          currentAvatar.image,
-          "_blank"
-        );
-
-        showToast(
-          "Opening HD image"
-        );
-
-      }
-
-    }
+}
 
 
-    /* ========================================================
-       MOBILE MENU
-       ======================================================== */
+/* ------------------------------------------------------------
+   TOAST
+   ------------------------------------------------------------ */
 
-    function toggleMobileMenu() {
+let toastTimer;
 
-      const links =
-        document.querySelector(
-          ".nav-links"
-        );
+function showToast(
+  message
+) {
 
-      if (
-        links.style.display ===
-        "flex"
-      ) {
+  const toast =
+    document.getElementById(
+      "toast"
+    );
 
-        links.style.display =
-          "";
+  const text =
+    document.getElementById(
+      "toastMessage"
+    );
 
-      } else {
+  text.textContent =
+    message;
 
-        links.style.display =
-          "flex";
+  toast.classList.add(
+    "show"
+  );
 
-        links.style.position =
-          "absolute";
+  clearTimeout(
+    toastTimer
+  );
 
-        links.style.top =
-          "65px";
+  toastTimer =
+    setTimeout(function () {
 
-        links.style.left =
-          "0";
-
-        links.style.right =
-          "0";
-
-        links.style.padding =
-          "15px";
-
-        links.style.flexDirection =
-          "column";
-
-        links.style.background =
-          "rgba(15,15,19,.96)";
-
-        links.style.border =
-          "1px solid rgba(255,255,255,.08)";
-
-        links.style.borderRadius =
-          "15px";
-
-        links.style.backdropFilter =
-          "blur(20px)";
-
-      }
-
-    }
-
-
-    /* ========================================================
-       TOAST
-       ======================================================== */
-
-    let toastTimer;
-
-    function showToast(message) {
-
-      const toast =
-        document.getElementById(
-          "toast"
-        );
-
-      const text =
-        document.getElementById(
-          "toastText"
-        );
-
-      text.textContent =
-        message;
-
-      toast.classList.add(
+      toast.classList.remove(
         "show"
       );
 
-      clearTimeout(
-        toastTimer
-      );
+    }, 2600);
 
-      toastTimer =
-        setTimeout(() => {
+}
 
-          toast.classList.remove(
-            "show"
-          );
 
-        }, 2500);
+/* ------------------------------------------------------------
+   MOBILE MENU
+   ------------------------------------------------------------ */
+
+function mobileMenu() {
+
+  const links =
+    document.querySelector(
+      ".nav-links"
+    );
+
+  if (
+    getComputedStyle(links).display
+    === "none"
+  ) {
+
+    links.style.display =
+      "flex";
+
+    links.style.position =
+      "absolute";
+
+    links.style.top =
+      "67px";
+
+    links.style.left =
+      "13px";
+
+    links.style.right =
+      "13px";
+
+    links.style.padding =
+      "15px";
+
+    links.style.flexDirection =
+      "column";
+
+    links.style.alignItems =
+      "flex-start";
+
+    links.style.background =
+      "rgba(15,15,20,.97)";
+
+    links.style.border =
+      "1px solid rgba(255,255,255,.08)";
+
+    links.style.borderRadius =
+      "15px";
+
+    links.style.backdropFilter =
+      "blur(20px)";
+
+  } else {
+
+    links.style.display =
+      "";
+
+  }
+
+}
+
+
+/* ------------------------------------------------------------
+   ESC KEY
+   ------------------------------------------------------------ */
+
+document.addEventListener(
+  "keydown",
+  function (event) {
+
+    if (
+      event.key ===
+      "Escape"
+    ) {
+
+      closeModal();
 
     }
 
+  }
+);
 
-    /* ========================================================
-       EXTRA CSS FOR SPINNER
-       ======================================================== */
 
-    const extraStyle =
-      document.createElement("style");
+/* ------------------------------------------------------------
+   ENTER / CTRL+ENTER
+   ------------------------------------------------------------ */
 
-    extraStyle.textContent = `
+promptElement.addEventListener(
+  "keydown",
+  function (event) {
 
-      .spin {
-        animation:
-          spin 1s linear infinite;
-      }
+    /*
+     * Ctrl + Enter / Cmd + Enter
+     * starts generation.
+     */
 
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
+    if (
+      (event.ctrlKey ||
+       event.metaKey) &&
+      event.key === "Enter"
+    ) {
 
-    `;
+      event.preventDefault();
 
-    document.head.appendChild(
-      extraStyle
-    );
+      generateAvatar();
 
-  </script>
+    }
+
+  }
+);
+
+
+/* ------------------------------------------------------------
+   INITIALIZATION
+   ------------------------------------------------------------ */
+
+console.log(
+  "PersonaAI initialized successfully."
+);
+
+</script>
 
 </body>
 </html>
