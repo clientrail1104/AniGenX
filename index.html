@@ -1,3844 +1,599 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-<meta charset="UTF-8">
-
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0, viewport-fit=cover"
->
-
-<meta
-  name="description"
-  content="PersonaAI — Generate photorealistic human avatars from a single prompt."
->
-
-<meta name="theme-color" content="#0A0A0C">
-
-<title>PersonaAI — Photorealistic Human Avatars</title>
-
-<style>
-/* ============================================================
-   PERSONAAI
-   Standalone HTML / CSS / JavaScript
-   No framework required
-   ============================================================ */
-
-:root {
-  --bg: #0A0A0C;
-  --bg2: #0E0E12;
-
-  --panel: rgba(20, 20, 27, 0.72);
-  --panel2: rgba(255,255,255,.035);
-
-  --text: #f7f7fb;
-  --muted: rgba(247,247,251,.55);
-  --muted2: rgba(247,247,251,.32);
-
-  --border: rgba(255,255,255,.09);
-
-  --violet: #8B5CF6;
-  --violet2: #A78BFA;
-
-  --blue: #5B8CFF;
-  --cyan: #54D8FF;
-
-  --success: #63E6BE;
-
-  --radius: 24px;
-}
-
-/* ============================================================
-   RESET
-   ============================================================ */
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  min-height: 100vh;
-
-  background:
-    radial-gradient(
-      circle at 50% -10%,
-      rgba(139,92,246,.15),
-      transparent 34%
-    ),
-    radial-gradient(
-      circle at 95% 45%,
-      rgba(91,140,255,.09),
-      transparent 32%
-    ),
-    radial-gradient(
-      circle at 5% 70%,
-      rgba(139,92,246,.07),
-      transparent 28%
-    ),
-    var(--bg);
-
-  color: var(--text);
-
-  font-family:
-    Inter,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
-
-  overflow-x: hidden;
-}
-
-button,
-textarea,
-select {
-  font: inherit;
-}
-
-button {
-  cursor: pointer;
-}
-
-img {
-  max-width: 100%;
-}
-
-::selection {
-  background: rgba(139,92,246,.35);
-}
-
-/* ============================================================
-   BACKGROUND
-   ============================================================ */
-
-.background-grid {
-  position: fixed;
-  inset: 0;
-
-  pointer-events: none;
-
-  background-image:
-    linear-gradient(
-      rgba(255,255,255,.018) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      rgba(255,255,255,.018) 1px,
-      transparent 1px
-    );
-
-  background-size: 50px 50px;
-
-  mask-image:
-    linear-gradient(
-      to bottom,
-      black 0%,
-      transparent 82%
-    );
-
-  z-index: 0;
-}
-
-.orb {
-  position: fixed;
-
-  width: 420px;
-  height: 420px;
-
-  border-radius: 50%;
-
-  filter: blur(110px);
-
-  opacity: .18;
-
-  pointer-events: none;
-
-  z-index: 0;
-
-  animation:
-    floatingOrb 13s ease-in-out infinite alternate;
-}
-
-.orb-a {
-  left: -220px;
-  top: 25%;
-  background: var(--violet);
-}
-
-.orb-b {
-  right: -220px;
-  top: 50%;
-  background: var(--blue);
-  animation-delay: -4s;
-}
-
-.orb-c {
-  left: 40%;
-  bottom: -320px;
-  background: #B44CFF;
-  animation-delay: -8s;
-}
-
-@keyframes floatingOrb {
-  from {
-    transform: translate3d(0,0,0) scale(1);
-  }
-
-  to {
-    transform: translate3d(30px,-25px,0) scale(1.08);
-  }
-}
-
-/* ============================================================
-   NAV
-   ============================================================ */
-
-.nav {
-  position: relative;
-  z-index: 10;
-
-  width: min(1200px, calc(100% - 40px));
-
-  height: 78px;
-
-  margin: auto;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-
-  color: white;
-
-  font-size: 18px;
-  font-weight: 800;
-
-  letter-spacing: -.05em;
-
-  text-decoration: none;
-}
-
-.logo-mark {
-  width: 38px;
-  height: 38px;
-
-  display: grid;
-  place-items: center;
-
-  border-radius: 12px;
-
-  background:
-    linear-gradient(
-      135deg,
-      var(--violet),
-      var(--blue)
-    );
-
-  box-shadow:
-    0 0 35px rgba(139,92,246,.3);
-}
-
-.logo-ai {
-  color: var(--violet2);
-}
-
-.nav-links {
-  display: flex;
-  align-items: center;
-  gap: 28px;
-}
-
-.nav-links a {
-  color: var(--muted);
-
-  font-size: 12px;
-
-  text-decoration: none;
-
-  transition: color .2s ease;
-}
-
-.nav-links a:hover {
-  color: white;
-}
-
-.nav-create {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-
-  min-height: 38px;
-
-  padding: 0 14px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius: 11px;
-
-  background:
-    rgba(255,255,255,.035);
-
-  color: white;
-
-  font-size: 11px;
-  font-weight: 700;
-
-  transition:
-    background .2s,
-    transform .2s;
-}
-
-.nav-create:hover {
-  background:
-    rgba(255,255,255,.08);
-
-  transform:
-    translateY(-1px);
-}
-
-.mobile-button {
-  display: none;
-
-  width: 40px;
-  height: 40px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius: 11px;
-
-  background:
-    rgba(255,255,255,.04);
-
-  color: white;
-
-  font-size: 18px;
-}
-
-/* ============================================================
-   HERO
-   ============================================================ */
-
-.hero {
-  position: relative;
-  z-index: 2;
-
-  width: min(1200px, calc(100% - 40px));
-
-  margin: auto;
-
-  padding:
-    105px 0
-    55px;
-}
-
-.hero-inner {
-  max-width: 900px;
-
-  margin: auto;
-
-  text-align: center;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-
-  padding: 8px 13px;
-
-  border:
-    1px solid rgba(139,92,246,.22);
-
-  border-radius: 999px;
-
-  background:
-    rgba(139,92,246,.07);
-
-  color:
-    #dcd0ff;
-
-  font-size: 10px;
-  font-weight: 700;
-
-  letter-spacing: .02em;
-
-  animation:
-    fadeUp .7s ease both;
-}
-
-.badge-dot {
-  width: 6px;
-  height: 6px;
-
-  border-radius: 50%;
-
-  background:
-    var(--violet2);
-
-  box-shadow:
-    0 0 12px var(--violet);
-}
-
-.hero h1 {
-  margin-top: 26px;
-
-  font-size:
-    clamp(44px, 7vw, 78px);
-
-  line-height: .98;
-
-  letter-spacing: -.07em;
-
-  font-weight: 800;
-
-  animation:
-    fadeUp .8s .08s ease both;
-}
-
-.gradient {
-  background:
-    linear-gradient(
-      100deg,
-      #ffffff,
-      #d9ccff 45%,
-      #a9c2ff
-    );
-
-  -webkit-background-clip: text;
-  background-clip: text;
-
-  color: transparent;
-}
-
-.hero-description {
-  max-width: 670px;
-
-  margin:
-    25px auto 0;
-
-  color: var(--muted);
-
-  font-size: 15px;
-
-  line-height: 1.75;
-
-  animation:
-    fadeUp .8s .16s ease both;
-}
-
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ============================================================
-   GENERATOR
-   ============================================================ */
-
-.generator {
-  max-width: 880px;
-
-  margin:
-    48px auto 0;
-
-  animation:
-    fadeUp .8s .25s ease both;
-}
-
-.prompt-border {
-  padding: 1px;
-
-  border-radius: 28px;
-
-  background:
-    linear-gradient(
-      110deg,
-      rgba(139,92,246,.58),
-      rgba(91,140,255,.22),
-      rgba(139,92,246,.48)
-    );
-
-  box-shadow:
-    0 0 90px rgba(139,92,246,.12);
-}
-
-.prompt-box {
-  position: relative;
-
-  min-height: 180px;
-
-  border-radius: 27px;
-
-  background:
-    rgba(14,14,19,.88);
-
-  border:
-    1px solid rgba(255,255,255,.055);
-
-  backdrop-filter:
-    blur(28px);
-
-  -webkit-backdrop-filter:
-    blur(28px);
-
-  overflow: hidden;
-}
-
-.prompt-box textarea {
-  width: 100%;
-
-  min-height: 180px;
-
-  padding:
-    22px
-    22px
-    72px;
-
-  resize: vertical;
-
-  border: 0;
-  outline: 0;
-
-  background: transparent;
-
-  color: white;
-
-  font-size: 15px;
-
-  line-height: 1.7;
-}
-
-.prompt-box textarea::placeholder {
-  color:
-    rgba(255,255,255,.25);
-
-  transition: opacity .2s ease;
-}
-
-.prompt-bottom {
-  position: absolute;
-
-  left: 12px;
-  right: 12px;
-  bottom: 12px;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  gap: 10px;
-}
-
-.magic {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  min-height: 40px;
-
-  padding: 0 11px;
-
-  border:
-    1px solid rgba(139,92,246,.25);
-
-  border-radius: 11px;
-
-  background:
-    rgba(139,92,246,.08);
-
-  color:
-    #ddd1ff;
-
-  font-size: 10px;
-  font-weight: 700;
-
-  transition: .2s;
-}
-
-.magic:hover {
-  background:
-    rgba(139,92,246,.14);
-}
-
-.magic.off {
-  color: var(--muted);
-
-  border-color:
-    var(--border);
-
-  background:
-    rgba(255,255,255,.035);
-}
-
-.toggle {
-  position: relative;
-
-  width: 30px;
-  height: 17px;
-
-  border: 0;
-
-  border-radius: 999px;
-
-  background:
-    rgba(255,255,255,.15);
-}
-
-.toggle span {
-  position: absolute;
-
-  top: 2px;
-  left: 2px;
-
-  width: 13px;
-  height: 13px;
-
-  border-radius: 50%;
-
-  background: white;
-
-  transition:
-    transform .2s ease;
-}
-
-.toggle.active {
-  background:
-    var(--violet);
-}
-
-.toggle.active span {
-  transform:
-    translateX(13px);
-}
-
-.generate {
-  position: relative;
-
-  min-height: 42px;
-
-  padding:
-    0 17px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-
-  overflow: hidden;
-
-  border: 0;
-
-  border-radius: 11px;
-
-  background:
-    linear-gradient(
-      105deg,
-      #7c3aed,
-      #6366f1,
-      #4f8cff
-    );
-
-  color: white;
-
-  font-size: 11px;
-  font-weight: 800;
-
-  box-shadow:
-    0 10px 35px rgba(99,102,241,.22);
-
-  transition:
-    transform .2s ease,
-    box-shadow .2s ease;
-}
-
-.generate::after {
-  content: "";
-
-  position: absolute;
-
-  inset: 0;
-
-  background:
-    linear-gradient(
-      105deg,
-      transparent 25%,
-      rgba(255,255,255,.35) 48%,
-      transparent 70%
-    );
-
-  transform:
-    translateX(-120%);
-
-  transition:
-    transform .7s ease;
-}
-
-.generate:hover::after {
-  transform:
-    translateX(120%);
-}
-
-.generate:hover {
-  transform:
-    translateY(-2px);
-
-  box-shadow:
-    0 16px 45px rgba(99,102,241,.32);
-}
-
-.generate:disabled {
-  opacity: .6;
-  cursor: wait;
-  transform: none;
-}
-
-/* ============================================================
-   STYLE PILLS
-   ============================================================ */
-
-.styles {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-
-  gap: 8px;
-
-  margin-top: 17px;
-}
-
-.style {
-  padding:
-    9px 13px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius: 999px;
-
-  background:
-    rgba(255,255,255,.025);
-
-  color:
-    rgba(255,255,255,.45);
-
-  font-size: 10px;
-  font-weight: 600;
-
-  transition:
-    color .2s,
-    background .2s,
-    border-color .2s;
-}
-
-.style:hover {
-  color: white;
-
-  background:
-    rgba(255,255,255,.06);
-}
-
-.style.active {
-  color:
-    #e2d8ff;
-
-  border-color:
-    rgba(139,92,246,.3);
-
-  background:
-    rgba(139,92,246,.1);
-}
-
-/* ============================================================
-   OPTIONS
-   ============================================================ */
-
-.options {
-  display: grid;
-
-  grid-template-columns:
-    1.25fr
-    .8fr
-    .8fr;
-
-  gap: 13px;
-
-  margin-top: 23px;
-
-  padding: 16px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius: 18px;
-
-  background:
-    rgba(17,17,23,.58);
-
-  backdrop-filter:
-    blur(24px);
-}
-
-.label {
-  margin-bottom: 8px;
-
-  color:
-    var(--muted2);
-
-  font-size: 8px;
-
-  font-weight: 800;
-
-  letter-spacing: .17em;
-
-  text-transform: uppercase;
-}
-
-.ratios {
-  display: grid;
-
-  grid-template-columns:
-    repeat(3, 1fr);
-
-  gap: 5px;
-}
-
-.ratio {
-  min-height: 34px;
-
-  border: 0;
-
-  border-radius: 8px;
-
-  background:
-    rgba(255,255,255,.045);
-
-  color:
-    var(--muted);
-
-  font-size: 9px;
-
-  transition: .2s;
-}
-
-.ratio.active {
-  background: white;
-
-  color:
-    #09090b;
-
-  font-weight: 800;
-}
-
-.select {
-  position: relative;
-}
-
-.select select {
-  width: 100%;
-
-  min-height: 34px;
-
-  appearance: none;
-
-  border:
-    1px solid rgba(255,255,255,.07);
-
-  border-radius: 8px;
-
-  outline: 0;
-
-  background:
-    rgba(255,255,255,.035);
-
-  color:
-    rgba(255,255,255,.72);
-
-  padding:
-    0 30px 0 10px;
-
-  font-size: 9px;
-}
-
-.select-arrow {
-  position: absolute;
-
-  right: 9px;
-  top: 50%;
-
-  transform:
-    translateY(-50%);
-
-  pointer-events: none;
-
-  color:
-    var(--muted2);
-
-  font-size: 12px;
-}
-
-/* ============================================================
-   RESULT
-   ============================================================ */
-
-.result {
-  display: none;
-
-  max-width: 880px;
-
-  margin:
-    25px auto 0;
-}
-
-.result.visible {
-  display: block;
-
-  animation:
-    fadeUp .5s ease both;
-}
-
-.result-card {
-  padding: 17px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius: 22px;
-
-  background:
-    rgba(17,17,23,.68);
-
-  backdrop-filter:
-    blur(25px);
-}
-
-.result-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.result-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.result-icon {
-  width: 38px;
-  height: 38px;
-
-  display: grid;
-  place-items: center;
-
-  border-radius: 11px;
-
-  background:
-    rgba(139,92,246,.1);
-
-  color:
-    var(--violet2);
-
-  font-size: 16px;
-}
-
-.result-title strong {
-  display: block;
-
-  font-size: 11px;
-}
-
-.result-title span {
-  display: block;
-
-  margin-top: 3px;
-
-  color:
-    var(--muted2);
-
-  font-size: 9px;
-}
-
-.result-percent {
-  color:
-    #d9cdff;
-
-  font-size: 11px;
-
-  font-weight: 800;
-}
-
-.progress-track {
-  height: 5px;
-
-  margin-top: 15px;
-
-  overflow: hidden;
-
-  border-radius: 999px;
-
-  background:
-    rgba(255,255,255,.06);
-}
-
-.progress-fill {
-  width: 0%;
-
-  height: 100%;
-
-  border-radius: inherit;
-
-  background:
-    linear-gradient(
-      90deg,
-      var(--violet),
-      var(--blue),
-      var(--cyan)
-    );
-
-  transition:
-    width .45s ease;
-}
-
-.render-preview {
-  position: relative;
-
-  min-height: 280px;
-
-  margin-top: 15px;
-
-  display: grid;
-  place-items: center;
-
-  overflow: hidden;
-
-  border-radius: 17px;
-
-  background:
-    linear-gradient(
-      110deg,
-      rgba(255,255,255,.025),
-      rgba(255,255,255,.06),
-      rgba(255,255,255,.025)
-    );
-
-  background-size:
-    200% 100%;
-
-  animation:
-    skeleton 1.8s linear infinite;
-}
-
-@keyframes skeleton {
-  to {
-    background-position:
-      -200% 0;
-  }
-}
-
-.render-center {
-  text-align: center;
-
-  color:
-    rgba(255,255,255,.25);
-}
-
-.loader {
-  width: 31px;
-  height: 31px;
-
-  margin: auto auto 10px;
-
-  border:
-    2px solid rgba(255,255,255,.1);
-
-  border-top-color:
-    var(--violet2);
-
-  border-radius: 50%;
-
-  animation:
-    spin .8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.render-center p {
-  font-size: 10px;
-}
-
-/* ============================================================
-   SHOWCASE
-   ============================================================ */
-
-.showcase {
-  position: relative;
-  z-index: 2;
-
-  width:
-    min(1200px, calc(100% - 40px));
-
-  margin:
-    0 auto;
-
-  padding:
-    55px 0
-    100px;
-}
-
-.showcase-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-
-  margin-bottom: 26px;
-}
-
-.kicker {
-  margin-bottom: 8px;
-
-  color:
-    rgba(167,139,250,.72);
-
-  font-size: 8px;
-  font-weight: 800;
-
-  letter-spacing: .2em;
-
-  text-transform: uppercase;
-}
-
-.showcase-header h2 {
-  font-size: 27px;
-
-  letter-spacing: -.05em;
-}
-
-.showcase-note {
-  color:
-    var(--muted2);
-
-  font-size: 9px;
-}
-
-/* ============================================================
-   MASONRY
-   ============================================================ */
-
-.gallery {
-  columns:
-    3 260px;
-
-  column-gap: 15px;
-}
-
-.avatar {
-  position: relative;
-
-  display: inline-block;
-
-  width: 100%;
-
-  margin:
-    0 0 15px;
-
-  overflow: hidden;
-
-  break-inside: avoid;
-
-  border:
-    1px solid var(--border);
-
-  border-radius: 17px;
-
-  background:
-    #111116;
-
-  cursor: pointer;
-}
-
-.avatar img {
-  display: block;
-
-  width: 100%;
-
-  height: auto;
-
-  transition:
-    transform .7s ease;
-}
-
-.avatar:hover img {
-  transform:
-    scale(1.045);
-}
-
-.avatar-overlay {
-  position: absolute;
-
-  inset: 0;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-
-  padding: 17px;
-
-  background:
-    linear-gradient(
-      to top,
-      rgba(0,0,0,.96),
-      rgba(0,0,0,.63) 38%,
-      transparent 73%
-    );
-
-  opacity: 0;
-
-  transform:
-    translateY(7px);
-
-  transition:
-    opacity .3s ease,
-    transform .3s ease;
-}
-
-.avatar:hover .avatar-overlay {
-  opacity: 1;
-
-  transform:
-    translateY(0);
-}
-
-.avatar-name {
-  color:
-    #e0d6ff;
-
-  font-size: 10px;
-
-  font-weight: 800;
-}
-
-.avatar-prompt {
-  display: -webkit-box;
-
-  margin-top: 6px;
-
-  overflow: hidden;
-
-  color:
-    rgba(255,255,255,.68);
-
-  font-size: 9px;
-
-  line-height: 1.6;
-
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-}
-
-.avatar-buttons {
-  display: flex;
-
-  gap: 6px;
-
-  margin-top: 11px;
-}
-
-.avatar-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-
-  min-height: 31px;
-
-  padding:
-    0 10px;
-
-  border:
-    1px solid rgba(255,255,255,.13);
-
-  border-radius: 8px;
-
-  background:
-    rgba(255,255,255,.92);
-
-  color:
-    #111;
-
-  font-size: 8px;
-
-  font-weight: 800;
-}
-
-.avatar-button.dark {
-  background:
-    rgba(0,0,0,.35);
-
-  color:
-    white;
-}
-
-/* ============================================================
-   MODAL
-   ============================================================ */
-
-.modal {
-  position: fixed;
-
-  inset: 0;
-
-  z-index: 100;
-
-  display: none;
-
-  align-items: center;
-  justify-content: center;
-
-  padding: 20px;
-
-  background:
-    rgba(0,0,0,.8);
-
-  backdrop-filter:
-    blur(18px);
-}
-
-.modal.open {
-  display: flex;
-
-  animation:
-    modalFade .22s ease;
-}
-
-@keyframes modalFade {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-.modal-box {
-  position: relative;
-
-  width:
-    min(1080px, 100%);
-
-  max-height:
-    94vh;
-
-  overflow:
-    auto;
-
-  padding: 14px;
-
-  border:
-    1px solid rgba(255,255,255,.1);
-
-  border-radius: 24px;
-
-  background:
-    rgba(16,16,21,.94);
-
-  box-shadow:
-    0 50px 130px rgba(0,0,0,.65);
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  padding:
-    3px 3px 12px;
-}
-
-.modal-header strong {
-  display: block;
-
-  font-size: 12px;
-}
-
-.modal-header span {
-  display: block;
-
-  margin-top: 4px;
-
-  color:
-    var(--muted2);
-
-  font-size: 8px;
-}
-
-.close {
-  width: 35px;
-  height: 35px;
-
-  border: 0;
-
-  border-radius: 10px;
-
-  background:
-    rgba(255,255,255,.05);
-
-  color:
-    white;
-
-  font-size: 17px;
-}
-
-.modal-grid {
-  display: grid;
-
-  grid-template-columns:
-    1.25fr .75fr;
-
-  gap: 14px;
-}
-
-.modal-photo {
-  min-height: 420px;
-
-  display: grid;
-  place-items: center;
-
-  overflow: hidden;
-
-  border-radius: 17px;
-
-  background:
-    #050507;
-}
-
-.modal-photo img {
-  width: 100%;
-  height: 100%;
-
-  max-height: 70vh;
-
-  object-fit: contain;
-}
-
-.modal-info {
-  display: flex;
-  flex-direction: column;
-
-  padding: 18px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius: 17px;
-
-  background:
-    rgba(255,255,255,.025);
-}
-
-.info-label {
-  color:
-    var(--muted2);
-
-  font-size: 8px;
-
-  font-weight: 800;
-
-  letter-spacing: .18em;
-
-  text-transform: uppercase;
-}
-
-.info-prompt {
-  margin-top: 12px;
-
-  color:
-    rgba(255,255,255,.7);
-
-  font-size: 10px;
-
-  line-height: 1.75;
-}
-
-.modal-actions {
-  display: grid;
-
-  gap: 7px;
-
-  margin-top: auto;
-
-  padding-top: 30px;
-}
-
-.modal-action {
-  min-height: 40px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius: 9px;
-
-  background:
-    rgba(255,255,255,.04);
-
-  color:
-    white;
-
-  font-size: 9px;
-
-  font-weight: 700;
-}
-
-.modal-action:hover {
-  background:
-    rgba(255,255,255,.08);
-}
-
-.modal-action.primary {
-  border: 0;
-
-  background:
-    linear-gradient(
-      100deg,
-      var(--violet),
-      var(--blue)
-    );
-}
-
-/* ============================================================
-   TOAST
-   ============================================================ */
-
-.toast {
-  position: fixed;
-
-  right: 20px;
-  bottom: 20px;
-
-  z-index: 200;
-
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  min-height: 42px;
-
-  padding:
-    0 14px;
-
-  border:
-    1px solid rgba(255,255,255,.1);
-
-  border-radius: 11px;
-
-  background:
-    rgba(18,18,23,.95);
-
-  color:
-    white;
-
-  font-size: 9px;
-
-  box-shadow:
-    0 20px 60px rgba(0,0,0,.45);
-
-  transform:
-    translateY(20px);
-
-  opacity: 0;
-
-  pointer-events: none;
-
-  transition:
-    .25s ease;
-}
-
-.toast.show {
-  transform:
-    translateY(0);
-
-  opacity: 1;
-}
-
-/* ============================================================
-   FOOTER
-   ============================================================ */
-
-.footer {
-  position: relative;
-  z-index: 2;
-
-  border-top:
-    1px solid rgba(255,255,255,.05);
-}
-
-.footer-inner {
-  width:
-    min(1200px, calc(100% - 40px));
-
-  margin:
-    auto;
-
-  min-height: 75px;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  color:
-    rgba(255,255,255,.28);
-
-  font-size: 9px;
-}
-
-.api-status {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-
-  border-radius: 50%;
-
-  background:
-    var(--success);
-
-  box-shadow:
-    0 0 12px rgba(99,230,190,.7);
-}
-
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
-
-@media (max-width: 850px) {
-
-  .nav-links,
-  .nav-create {
-    display: none;
-  }
-
-  .mobile-button {
-    display: block;
-  }
-
-  .options {
-    grid-template-columns:
-      1fr;
-  }
-
-  .modal-grid {
-    grid-template-columns:
-      1fr;
-  }
-
-  .modal-photo {
-    min-height: 300px;
-  }
-}
-
-@media (max-width: 600px) {
-
-  .nav,
-  .hero,
-  .showcase,
-  .footer-inner {
-    width:
-      calc(100% - 26px);
-  }
-
-  .hero {
-    padding-top:
-      65px;
-  }
-
-  .hero h1 {
-    font-size:
-      44px;
-  }
-
-  .hero-description {
-    font-size:
-      13px;
-  }
-
-  .prompt-box textarea {
-    min-height:
-      200px;
-
-    font-size:
-      13px;
-  }
-
-  .prompt-bottom {
-    align-items:
-      flex-end;
-  }
-
-  .magic {
-    font-size:
-      8px;
-  }
-
-  .generate {
-    padding:
-      0 12px;
-
-    font-size:
-      9px;
-  }
-
-  .showcase-header {
-    display: block;
-  }
-
-  .showcase-note {
-    display: block;
-
-    margin-top:
-      8px;
-  }
-
-  .gallery {
-    columns:
-      1;
-  }
-
-  .footer-inner {
-    min-height:
-      100px;
-
-    flex-direction:
-      column;
-
-    align-items:
-      flex-start;
-
-    justify-content:
-      center;
-
-    gap:
-      10px;
-  }
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PersonaAI — Hyper-Photorealistic Human Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        darkBg: '#0A0A0C',
+                        surface: 'rgba(18, 18, 24, 0.65)',
+                        surfaceBorder: 'rgba(255, 255, 255, 0.12)',
+                        violetAccent: '#8B5CF6',
+                        blueAccent: '#3B82F6',
+                    },
+                    keyframes: {
+                        shimmer: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(100%)' }
+                        },
+                        pulseGlow: {
+                            '0%, 100%': { opacity: '0.4', filter: 'blur(40px)' },
+                            '50%': { opacity: '0.8', filter: 'blur(55px)' }
+                        }
+                    },
+                    animation: {
+                        shimmer: 'shimmer 2.5s infinite',
+                        pulseGlow: 'pulseGlow 6s ease-in-out infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0A0A0C;
+            color: #F3F4F6;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(18, 18, 26, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-panel-interactive {
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .glass-panel-interactive:hover {
+            border-color: rgba(139, 92, 246, 0.4);
+            box-shadow: 0 0 25px rgba(139, 92, 246, 0.15);
+        }
+        .text-gradient {
+            background: linear-gradient(135deg, #FFFFFF 30%, #A78BFA 70%, #60A5FA 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #7C3AED 0%, #2563EB 100%);
+        }
+        .btn-gradient:hover {
+            background: linear-gradient(135deg, #6D28D9 0%, #1D4ED8 100%);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0A0A0C; }
+        ::-webkit-scrollbar-thumb { background: #27272A; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3F3F46; }
+    </style>
 </head>
+<body class="min-h-screen flex flex-col justify-between relative selection:bg-violet-500 selection:text-white">
 
-<body>
+    <div class="fixed top-[-10%] left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-r from-violet-600/30 to-blue-600/20 rounded-full animate-pulseGlow pointer-events-none -z-10"></div>
+    <div class="fixed bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-violet-900/10 rounded-full blur-[120px] pointer-events-none -z-10"></div>
 
-<!-- ============================================================
-     BACKGROUND
-     ============================================================ -->
+    <header class="sticky top-0 z-40 w-full glass-panel border-b border-white/10 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="window.scrollTo({top:0, behavior:'smooth'})">
+                <div class="w-10 h-10 rounded-xl btn-gradient flex items-center justify-center shadow-lg shadow-violet-500/20">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+                </div>
+                <span class="text-xl font-bold tracking-tight text-white">Persona<span class="text-violet-400">AI</span></span>
+            </div>
 
-<div class="background-grid"></div>
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
+                <a href="#hero" class="hover:text-white transition-colors">Generator</a>
+                <a href="#showcase" class="hover:text-white transition-colors">Community Showcase</a>
+                <a href="#" class="hover:text-white transition-colors">API Docs</a>
+            </div>
 
-<div class="orb orb-a"></div>
-<div class="orb orb-b"></div>
-<div class="orb orb-c"></div>
+            <div class="flex items-center gap-4">
+                <span class="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-violet-500/10 text-violet-300 border border-violet-500/20">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> 8K Engine v2.4 Active
+                </span>
+                <button class="px-4 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white transition-all">
+                    Upgrade to Pro
+                </button>
+            </div>
+        </div>
+    </header>
 
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 pt-12 pb-24 space-y-16">
 
-<!-- ============================================================
-     NAVIGATION
-     ============================================================ -->
+        <section id="hero" class="text-center space-y-8 max-w-4xl mx-auto pt-6">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel text-xs font-medium text-violet-300 border border-violet-500/30 mb-2">
+                <i data-lucide="wand-2" class="w-3.5 h-3.5"></i> Single-Text Photorealistic Human Engine
+            </div>
 
-<nav class="nav">
+            <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight">
+                Generate Photorealistic Humans <br class="hidden sm:inline"/>
+                <span class="text-gradient">in One Click</span>
+            </h1>
 
-  <a href="#" class="logo">
+            <p class="text-zinc-400 text-base sm:text-lg max-w-2xl mx-auto font-normal">
+                State-of-the-art synthetic human generation with true-to-life skin porosity, sub-surface scattering, and dynamic cinematic lighting.
+            </p>
 
-    <span class="logo-mark">✦</span>
+            <div class="glass-panel p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl shadow-2xl relative group border border-white/15">
+                <div class="flex flex-col md:flex-row items-center gap-3">
+                    
+                    <div class="relative w-full flex items-center">
+                        <i data-lucide="sparkles" class="absolute left-4 w-5 h-5 text-zinc-400"></i>
+                        <input 
+                            type="text" 
+                            id="promptInput"
+                            class="w-full bg-transparent pl-12 pr-28 py-3.5 text-sm sm:text-base text-white placeholder-zinc-500 focus:outline-none"
+                            placeholder="30-year-old Japanese architect in a rain-slicked street..."
+                        />
+                        
+                        <button 
+                            id="magicEnhancerBtn"
+                            onclick="toggleMagicEnhancer()"
+                            title="Toggle Magic Prompt Enhancer (Appends photography terms)"
+                            class="absolute right-3 px-2.5 py-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-xs font-medium text-zinc-300 flex items-center gap-1.5 border border-white/10 transition-all">
+                            <i data-lucide="wand-2" class="w-3.5 h-3.5 text-violet-400"></i>
+                            <span class="hidden sm:inline">Magic</span>
+                            <span id="magicBadge" class="w-2 h-2 rounded-full bg-zinc-500"></span>
+                        </button>
+                    </div>
 
-    <span>
-      Persona<span class="logo-ai">AI</span>
-    </span>
+                    <button 
+                        onclick="generateAvatar()" 
+                        class="w-full md:w-auto px-8 py-4 rounded-xl sm:rounded-2xl btn-gradient text-white font-semibold text-sm flex items-center justify-center gap-2 relative overflow-hidden group shadow-lg shadow-violet-600/30 shrink-0">
+                        <span class="relative z-10 flex items-center gap-2">
+                            <span>Generate Avatar</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </span>
+                        <div class="absolute inset-0 bg-white/20 -translate-x-full group-hover:animate-shimmer"></div>
+                    </button>
+                </div>
 
-  </a>
+                <div class="mt-4 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-4 text-xs">
+                    
+                    <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 w-full md:w-auto">
+                        <span class="text-zinc-500 font-medium shrink-0">Styles:</span>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="selectStyle(this, 'Studio Portrait')" class="style-pill px-3 py-1.5 rounded-lg glass-panel hover:bg-white/10 text-zinc-300 border border-white/10 transition-all font-medium">Studio Portrait</button>
+                            <button onclick="selectStyle(this, 'Cinematic Street')" class="style-pill px-3 py-1.5 rounded-lg glass-panel hover:bg-white/10 text-zinc-300 border border-white/10 transition-all font-medium">Cinematic Street</button>
+                            <button onclick="selectStyle(this, 'Editorial Fashion')" class="style-pill px-3 py-1.5 rounded-lg glass-panel hover:bg-white/10 text-zinc-300 border border-white/10 transition-all font-medium">Editorial Fashion</button>
+                            <button onclick="selectStyle(this, 'Raw Photography')" class="style-pill px-3 py-1.5 rounded-lg glass-panel hover:bg-white/10 text-zinc-300 border border-white/10 transition-all font-medium">Raw Photography</button>
+                            <button onclick="selectStyle(this, 'Vintage Film')" class="style-pill px-3 py-1.5 rounded-lg glass-panel hover:bg-white/10 text-zinc-300 border border-white/10 transition-all font-medium">Vintage Film</button>
+                        </div>
+                    </div>
 
-  <div class="nav-links">
+                    <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+                        <div class="flex items-center bg-zinc-900/80 p-1 rounded-lg border border-white/10">
+                            <button onclick="setAspectRatio(this, '1:1')" class="aspect-btn px-2.5 py-1 rounded text-xs font-semibold bg-violet-600 text-white">1:1</button>
+                            <button onclick="setAspectRatio(this, '9:16')" class="aspect-btn px-2.5 py-1 rounded text-xs font-semibold text-zinc-400 hover:text-white">9:16</button>
+                            <button onclick="setAspectRatio(this, '16:9')" class="aspect-btn px-2.5 py-1 rounded text-xs font-semibold text-zinc-400 hover:text-white">16:9</button>
+                        </div>
 
-    <a href="#create">
-      Create
-    </a>
+                        <div class="flex items-center gap-2">
+                            <select id="genderFilter" class="bg-zinc-900/80 border border-white/10 text-zinc-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none">
+                                <option value="any">Gender: Any</option>
+                                <option value="female">Female</option>
+                                <option value="male">Male</option>
+                                <option value="nonbinary">Non-Binary</option>
+                            </select>
+                        </div>
+                    </div>
 
-    <a href="#showcase">
-      Showcase
-    </a>
+                </div>
+            </div>
+        </section>
 
-    <a href="#api">
-      API
-    </a>
+        <section id="canvasSection" class="hidden max-w-xl mx-auto">
+            <div class="glass-panel rounded-3xl p-6 border border-white/15 space-y-4">
+                
+                <div id="loadingState" class="space-y-4">
+                    <div class="relative w-full aspect-square rounded-2xl bg-zinc-800/60 overflow-hidden flex flex-col items-center justify-center p-6 text-center space-y-4">
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"></div>
+                        <div class="w-16 h-16 rounded-2xl border border-violet-500/30 flex items-center justify-center bg-violet-500/10 relative">
+                            <i data-lucide="loader-2" class="w-8 h-8 text-violet-400 animate-spin"></i>
+                        </div>
+                        <div>
+                            <p id="microStepText" class="text-sm font-semibold text-violet-300">Initializing neural engine...</p>
+                            <p class="text-xs text-zinc-500 mt-1">Hasselblad X2D 100C Simulation</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between text-xs text-zinc-400">
+                            <span>Generating Neural Mesh</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
+                            <div id="progressBar" class="bg-gradient-to-r from-violet-500 to-blue-500 h-full w-0 transition-all duration-300"></div>
+                        </div>
+                    </div>
+                </div>
 
-  </div>
+                <div id="resultState" class="hidden space-y-4">
+                    <div class="relative group rounded-2xl overflow-hidden border border-white/10 bg-zinc-900">
+                        <img id="generatedImage" src="" alt="Generated Avatar" class="w-full aspect-square object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                            <p id="appliedPromptText" class="text-xs text-zinc-200 line-clamp-2"></p>
+                        </div>
+                    </div>
 
-  <button
-    class="nav-create"
-    onclick="focusPrompt()"
-  >
-    Create Avatar
-    <span>↗</span>
-  </button>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="downloadHD()" class="py-2.5 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white flex items-center justify-center gap-1.5 transition-all">
+                            <i data-lucide="download" class="w-3.5 h-3.5 text-violet-400"></i> Download HD
+                        </button>
+                        <button onclick="copyCurrentPrompt()" class="py-2.5 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white flex items-center justify-center gap-1.5 transition-all">
+                            <i data-lucide="copy" class="w-3.5 h-3.5 text-blue-400"></i> Copy Prompt
+                        </button>
+                        <button onclick="openModalFromCanvas()" class="py-2.5 px-3 rounded-xl btn-gradient text-xs font-semibold text-white flex items-center justify-center gap-1.5 transition-all">
+                            <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i> Inspect
+                        </button>
+                    </div>
+                </div>
 
-  <button
-    class="mobile-button"
-    onclick="mobileMenu()"
-    aria-label="Open navigation"
-  >
-    ☰
-  </button>
+            </div>
+        </section>
 
-</nav>
+        <section id="showcase" class="space-y-6 pt-8">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-white/10 pb-4">
+                <div>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-white">Community Showcase</h2>
+                    <p class="text-zinc-400 text-sm">Explore hyper-realistic avatars crafted by creators worldwide.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button class="px-3 py-1.5 rounded-lg bg-white/10 text-xs font-medium text-white hover:bg-white/20 transition-all">Trending</button>
+                    <button class="px-3 py-1.5 rounded-lg bg-transparent text-xs font-medium text-zinc-400 hover:text-white transition-all">Latest</button>
+                </div>
+            </div>
 
+            <div id="showcaseGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                </div>
+        </section>
 
-<!-- ============================================================
-     HERO
-     ============================================================ -->
+    </main>
 
-<main>
+    <footer class="border-t border-white/10 glass-panel py-8 px-6 text-center text-xs text-zinc-500">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-lg btn-gradient flex items-center justify-center">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5 text-white"></i>
+                </div>
+                <span class="font-bold text-white">PersonaAI</span> &copy; 2026. All rights reserved.
+            </div>
+            <div class="flex gap-6 text-zinc-400">
+                <a href="#" class="hover:text-white">Privacy Policy</a>
+                <a href="#" class="hover:text-white">Terms of Service</a>
+                <a href="#" class="hover:text-white">Community Guidelines</a>
+            </div>
+        </div>
+    </footer>
 
-<section class="hero" id="create">
+    <div id="assetModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel rounded-3xl max-w-3xl w-full p-6 border border-white/20 relative space-y-6 max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal()" class="absolute top-4 right-4 p-2 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-all">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
 
-  <div class="hero-inner">
+            <div class="grid md:grid-cols-2 gap-6 items-center">
+                <div class="rounded-2xl overflow-hidden bg-zinc-900 border border-white/10">
+                    <img id="modalImg" src="" class="w-full aspect-square object-cover" alt="Modal Avatar">
+                </div>
 
-    <div class="badge">
+                <div class="space-y-4">
+                    <div>
+                        <span class="text-xs font-semibold text-violet-400 uppercase tracking-wider">Avatar Details</span>
+                        <h3 id="modalTitle" class="text-lg font-bold text-white mt-1">Hyper-Realistic Portrait</h3>
+                    </div>
 
-      <span class="badge-dot"></span>
+                    <div class="space-y-2">
+                        <label class="text-xs text-zinc-400 font-medium">Full Generation Prompt</label>
+                        <p id="modalPrompt" class="text-xs text-zinc-200 bg-zinc-900/90 p-3 rounded-xl border border-white/10 leading-relaxed max-h-32 overflow-y-auto"></p>
+                    </div>
 
-      Next-generation human synthesis
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-zinc-900/60 p-2.5 rounded-xl border border-white/5">
+                            <span class="text-zinc-500 block">Lens Simulation</span>
+                            <span class="text-zinc-200 font-medium">Hasselblad 85mm f/1.4</span>
+                        </div>
+                        <div class="bg-zinc-900/60 p-2.5 rounded-xl border border-white/5">
+                            <span class="text-zinc-500 block">Lighting</span>
+                            <span class="text-zinc-200 font-medium">Volumetric Studio Rim</span>
+                        </div>
+                    </div>
 
+                    <div class="pt-2 flex flex-col gap-2">
+                        <button onclick="remixFromModal()" class="w-full py-3 rounded-xl btn-gradient text-xs font-bold text-white flex items-center justify-center gap-2">
+                            <i data-lucide="repeat" class="w-4 h-4"></i> Remix This Avatar
+                        </button>
+                        <button onclick="downloadHD()" class="w-full py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white flex items-center justify-center gap-2">
+                            <i data-lucide="download" class="w-4 h-4"></i> Download High-Res (8K)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <h1>
-
-      Generate
-      <span class="gradient">
-        Photorealistic
-      </span>
-      Humans in One Click
-
-    </h1>
-
-    <p class="hero-description">
-
-      Describe the person you imagine.
-      PersonaAI transforms a single prompt
-      into a cinematic, hyper-photorealistic
-      human portrait.
-
-    </p>
-
-  </div>
-
-
-  <!-- ========================================================
-       GENERATOR
-       ======================================================== -->
-
-  <div class="generator">
-
-    <div class="prompt-border">
-
-      <div class="prompt-box">
-
-        <textarea
-          id="prompt"
-          spellcheck="false"
-          placeholder="30-year-old Japanese architect in a rain-slicked street, 85mm portrait..."
-        ></textarea>
-
-        <div class="prompt-bottom">
-
-          <button
-            id="magicButton"
-            class="magic"
-            onclick="toggleMagic()"
-          >
-
-            ✦
-
-            <span>
-              Magic Prompt
-            </span>
-
-            <span
-              id="magicToggle"
-              class="toggle active"
-            >
-              <span></span>
-            </span>
-
-          </button>
-
-          <button
-            id="generateButton"
-            class="generate"
-            onclick="generateAvatar()"
-          >
-
-            ✦
-
-            <span>
-              Generate Avatar
-            </span>
-
-          </button>
-
-        </div>
-
-      </div>
-
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 glass-panel px-4 py-3 rounded-xl border border-violet-500/30 text-xs font-medium text-white flex items-center gap-2 shadow-2xl">
+        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+        <span id="toastMsg">Action completed successfully</span>
     </div>
 
-
-    <!-- STYLE -->
-    <div class="styles">
-
-      <button
-        class="style active"
-        data-style="Studio Portrait"
-      >
-        Studio Portrait
-      </button>
-
-      <button
-        class="style"
-        data-style="Cinematic Street"
-      >
-        Cinematic Street
-      </button>
-
-      <button
-        class="style"
-        data-style="Editorial Fashion"
-      >
-        Editorial Fashion
-      </button>
-
-      <button
-        class="style"
-        data-style="Raw Photography"
-      >
-        Raw Photography
-      </button>
-
-      <button
-        class="style"
-        data-style="Vintage Film"
-      >
-        Vintage Film
-      </button>
-
-    </div>
-
-
-    <!-- OPTIONS -->
-    <div class="options">
-
-      <div>
-
-        <div class="label">
-          Aspect Ratio
-        </div>
-
-        <div class="ratios">
-
-          <button
-            class="ratio active"
-            data-ratio="1:1"
-          >
-            1:1 Portrait
-          </button>
-
-          <button
-            class="ratio"
-            data-ratio="9:16"
-          >
-            9:16 Story
-          </button>
-
-          <button
-            class="ratio"
-            data-ratio="16:9"
-          >
-            16:9 Landscape
-          </button>
-
-        </div>
-
-      </div>
-
-
-      <div>
-
-        <div class="label">
-          Gender
-        </div>
-
-        <div class="select">
-
-          <select id="gender">
-
-            <option value="Any">
-              Any
-            </option>
-
-            <option value="Female">
-              Female
-            </option>
-
-            <option value="Male">
-              Male
-            </option>
-
-            <option value="Androgynous">
-              Androgynous
-            </option>
-
-          </select>
-
-          <span class="select-arrow">
-            ▾
-          </span>
-
-        </div>
-
-      </div>
-
-
-      <div>
-
-        <div class="label">
-          Ethnicity
-        </div>
-
-        <div class="select">
-
-          <select id="ethnicity">
-
-            <option value="Any">
-              Any
-            </option>
-
-            <option value="East Asian">
-              East Asian
-            </option>
-
-            <option value="South Asian">
-              South Asian
-            </option>
-
-            <option value="Black">
-              Black
-            </option>
-
-            <option value="Latino">
-              Latino
-            </option>
-
-            <option value="Middle Eastern">
-              Middle Eastern
-            </option>
-
-            <option value="European">
-              European
-            </option>
-
-            <option value="Mixed">
-              Mixed
-            </option>
-
-          </select>
-
-          <span class="select-arrow">
-            ▾
-          </span>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </div>
-
-
-  <!-- ========================================================
-       GENERATION RESULT
-       ======================================================== -->
-
-  <section
-    id="result"
-    class="result"
-    aria-live="polite"
-  >
-
-    <div class="result-card">
-
-      <div class="result-top">
-
-        <div class="result-title">
-
-          <div class="result-icon">
-            ✦
-          </div>
-
-          <div>
-
-            <strong>
-              Creating your avatar
-            </strong>
-
-            <span id="generationStatus">
-              Preparing your portrait...
-            </span>
-
-          </div>
-
-        </div>
-
-        <div
-          id="progressPercent"
-          class="result-percent"
-        >
-          0%
-        </div>
-
-      </div>
-
-      <div class="progress-track">
-
-        <div
-          id="progressFill"
-          class="progress-fill"
-        ></div>
-
-      </div>
-
-      <div class="render-preview">
-
-        <div class="render-center">
-
-          <div class="loader"></div>
-
-          <p>
-            Live rendering canvas
-          </p>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </section>
-
-</section>
-
-
-<!-- ============================================================
-     SHOWCASE
-     ============================================================ -->
-
-<section
-  class="showcase"
-  id="showcase"
->
-
-  <div class="showcase-header">
-
-    <div>
-
-      <div class="kicker">
-        Community Showcase
-      </div>
-
-      <h2>
-        Made with PersonaAI
-      </h2>
-
-    </div>
-
-    <div class="showcase-note">
-      Hover an avatar to inspect and remix
-    </div>
-
-  </div>
-
-
-  <div class="gallery" id="gallery">
-
-
-    <!-- AVATAR 1 -->
-
-    <article
-      class="avatar"
-      data-name="Tokyo Architect"
-      data-prompt="30-year-old Japanese architect in a rain-slicked Tokyo street, 85mm portrait, natural skin texture, cinematic night lighting."
-      data-image="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1000&q=90"
-    >
-
-      <img
-        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1000&q=90"
-        alt="Tokyo Architect"
-        loading="lazy"
-      >
-
-      <div class="avatar-overlay">
-
-        <div class="avatar-name">
-          Tokyo Architect
-        </div>
-
-        <div class="avatar-prompt">
-          30-year-old Japanese architect in a rain-slicked Tokyo street, 85mm portrait, natural skin texture, cinematic night lighting.
-        </div>
-
-        <div class="avatar-buttons">
-
-          <button
-            class="avatar-button"
-            onclick="remixAvatar(this)"
-          >
-            ↻ Remix
-          </button>
-
-          <button
-            class="avatar-button dark"
-            onclick="openAvatar(this)"
-          >
-            View
-          </button>
-
-        </div>
-
-      </div>
-
-    </article>
-
-
-    <!-- AVATAR 2 -->
-
-    <article
-      class="avatar"
-      data-name="Golden Hour Editorial"
-      data-prompt="Confident editorial fashion portrait during golden hour, warm rim light, authentic skin texture, subtle film grain."
-      data-image="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1000&q=90"
-    >
-
-      <img
-        src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1000&q=90"
-        alt="Golden Hour Editorial"
-        loading="lazy"
-      >
-
-      <div class="avatar-overlay">
-
-        <div class="avatar-name">
-          Golden Hour Editorial
-        </div>
-
-        <div class="avatar-prompt">
-          Confident editorial fashion portrait during golden hour, warm rim light, authentic skin texture, subtle film grain.
-        </div>
-
-        <div class="avatar-buttons">
-
-          <button
-            class="avatar-button"
-            onclick="remixAvatar(this)"
-          >
-            ↻ Remix
-          </button>
-
-          <button
-            class="avatar-button dark"
-            onclick="openAvatar(this)"
-          >
-            View
-          </button>
-
-        </div>
-
-      </div>
-
-    </article>
-
-
-    <!-- AVATAR 3 -->
-
-    <article
-      class="avatar"
-      data-name="Cinematic Traveler"
-      data-prompt="Young traveler standing inside a European railway station, candid expression, 35mm documentary photography, shallow depth of field."
-      data-image="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=1000&q=90"
-    >
-
-      <img
-        src="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=1000&q=90"
-        alt="Cinematic Traveler"
-        loading="lazy"
-      >
-
-      <div class="avatar-overlay">
-
-        <div class="avatar-name">
-          Cinematic Traveler
-        </div>
-
-        <div class="avatar-prompt">
-          Young traveler standing inside a European railway station, candid expression, 35mm documentary photography, shallow depth of field.
-        </div>
-
-        <div class="avatar-buttons">
-
-          <button
-            class="avatar-button"
-            onclick="remixAvatar(this)"
-          >
-            ↻ Remix
-          </button>
-
-          <button
-            class="avatar-button dark"
-            onclick="openAvatar(this)"
-          >
-            View
-          </button>
-
-        </div>
-
-      </div>
-
-    </article>
-
-
-    <!-- AVATAR 4 -->
-
-    <article
-      class="avatar"
-      data-name="Studio Minimal"
-      data-prompt="Photorealistic professional studio headshot, softbox key light, realistic pores, fine hair detail, Hasselblad X2D 100C."
-      data-image="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1000&q=90"
-    >
-
-      <img
-        src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1000&q=90"
-        alt="Studio Minimal"
-        loading="lazy"
-      >
-
-      <div class="avatar-overlay">
-
-        <div class="avatar-name">
-          Studio Minimal
-        </div>
-
-        <div class="avatar-prompt">
-          Photorealistic professional studio headshot, softbox key light, realistic pores, fine hair detail, Hasselblad X2D 100C.
-        </div>
-
-        <div class="avatar-buttons">
-
-          <button
-            class="avatar-button"
-            onclick="remixAvatar(this)"
-          >
-            ↻ Remix
-          </button>
-
-          <button
-            class="avatar-button dark"
-            onclick="openAvatar(this)"
-          >
-            View
-          </button>
-
-        </div>
-
-      </div>
-
-    </article>
-
-
-    <!-- AVATAR 5 -->
-
-    <article
-      class="avatar"
-      data-name="Modern Portrait"
-      data-prompt="Modern professional portrait with authentic pores, fine hair detail, soft volumetric studio lighting and natural expression."
-      data-image="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=1000&q=90"
-    >
-
-      <img
-        src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=1000&q=90"
-        alt="Modern Portrait"
-        loading="lazy"
-      >
-
-      <div class="avatar-overlay">
-
-        <div class="avatar-name">
-          Modern Portrait
-        </div>
-
-        <div class="avatar-prompt">
-          Modern professional portrait with authentic pores, fine hair detail, soft volumetric studio lighting and natural expression.
-        </div>
-
-        <div class="avatar-buttons">
-
-          <button
-            class="avatar-button"
-            onclick="remixAvatar(this)"
-          >
-            ↻ Remix
-          </button>
-
-          <button
-            class="avatar-button dark"
-            onclick="openAvatar(this)"
-          >
-            View
-          </button>
-
-        </div>
-
-      </div>
-
-    </article>
-
-
-    <!-- AVATAR 6 -->
-
-    <article
-      class="avatar"
-      data-name="Street Story"
-      data-prompt="Cinematic street portrait at blue hour, expressive eyes, rain reflections, realistic skin, 50mm lens and subtle film grain."
-      data-image="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1000&q=90"
-    >
-
-      <img
-        src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1000&q=90"
-        alt="Street Story"
-        loading="lazy"
-      >
-
-      <div class="avatar-overlay">
-
-        <div class="avatar-name">
-          Street Story
-        </div>
-
-        <div class="avatar-prompt">
-          Cinematic street portrait at blue hour, expressive eyes, rain reflections, realistic skin, 50mm lens and subtle film grain.
-        </div>
-
-        <div class="avatar-buttons">
-
-          <button
-            class="avatar-button"
-            onclick="remixAvatar(this)"
-          >
-            ↻ Remix
-          </button>
-
-          <button
-            class="avatar-button dark"
-            onclick="openAvatar(this)"
-          >
-            View
-          </button>
-
-        </div>
-
-      </div>
-
-    </article>
-
-  </div>
-
-</section>
-
-</main>
-
-
-<!-- ============================================================
-     FOOTER
-     ============================================================ -->
-
-<footer
-  class="footer"
-  id="api"
->
-
-  <div class="footer-inner">
-
-    <span>
-      PersonaAI · Human avatar generation
-    </span>
-
-    <span class="api-status">
-
-      <span class="status-dot"></span>
-
-      API integration ready
-
-    </span>
-
-  </div>
-
-</footer>
-
-
-<!-- ============================================================
-     MODAL
-     ============================================================ -->
-
-<div
-  id="modal"
-  class="modal"
-  role="dialog"
-  aria-modal="true"
-  aria-label="Avatar preview"
-  onclick="closeFromBackground(event)"
->
-
-  <div class="modal-box">
-
-    <div class="modal-header">
-
-      <div>
-
-        <strong id="modalName">
-          Avatar
-        </strong>
-
-        <span>
-          PersonaAI HD Preview
-        </span>
-
-      </div>
-
-      <button
-        class="close"
-        onclick="closeModal()"
-        aria-label="Close"
-      >
-        ×
-      </button>
-
-    </div>
-
-
-    <div class="modal-grid">
-
-      <div class="modal-photo">
-
-        <img
-          id="modalImage"
-          src=""
-          alt=""
-        >
-
-      </div>
-
-
-      <div class="modal-info">
-
-        <div class="info-label">
-          Prompt
-        </div>
-
-        <div
-          id="modalPrompt"
-          class="info-prompt"
-        ></div>
-
-
-        <div class="modal-actions">
-
-          <button
-            class="modal-action"
-            onclick="copyPrompt()"
-          >
-            ⧉ Copy Prompt
-          </button>
-
-          <button
-            class="modal-action primary"
-            onclick="variation()"
-          >
-            ↻ Generate Variations
-          </button>
-
-          <button
-            class="modal-action"
-            onclick="downloadAvatar()"
-          >
-            ↓ HD Download
-          </button>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </div>
-
-</div>
-
-
-<!-- ============================================================
-     TOAST
-     ============================================================ -->
-
-<div
-  id="toast"
-  class="toast"
->
-  <span>✓</span>
-  <span id="toastMessage">
-    Done
-  </span>
-</div>
-
-
-<script>
-
-/* ============================================================
-   PERSONAAI JAVASCRIPT
-   ============================================================ */
-
-
-/* ------------------------------------------------------------
-   STATE
-   ------------------------------------------------------------ */
-
-let magicEnabled = true;
-
-let selectedStyle =
-  "Studio Portrait";
-
-let selectedRatio =
-  "1:1";
-
-let currentAvatar = {
-  name: "",
-  prompt: "",
-  image: ""
-};
-
-
-/* ------------------------------------------------------------
-   PROMPT PLACEHOLDERS
-   ------------------------------------------------------------ */
-
-const placeholders = [
-
-  "30-year-old Japanese architect in a rain-slicked street, 85mm portrait...",
-
-  "Creative director in a sunlit brutalist studio, editorial fashion photography...",
-
-  "Young marine biologist standing on a foggy coastline, documentary portrait...",
-
-  "Elegant Parisian fashion portrait at blue hour, vintage 35mm film...",
-
-  "Technology founder in a modern glass office, cinematic natural light..."
-
-];
-
-let placeholderIndex = 0;
-
-const promptElement =
-  document.getElementById("prompt");
-
-setInterval(function () {
-
-  if (
-    promptElement.value.trim() !== "" ||
-    document.activeElement === promptElement
-  ) {
-    return;
-  }
-
-  promptElement.style.opacity =
-    ".3";
-
-  setTimeout(function () {
-
-    placeholderIndex =
-      (placeholderIndex + 1)
-      % placeholders.length;
-
-    promptElement.placeholder =
-      placeholders[placeholderIndex];
-
-    promptElement.style.opacity =
-      "1";
-
-  }, 220);
-
-}, 3000);
-
-
-/* ------------------------------------------------------------
-   FOCUS PROMPT
-   ------------------------------------------------------------ */
-
-function focusPrompt() {
-
-  promptElement.focus();
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
-
-}
-
-
-/* ------------------------------------------------------------
-   MAGIC PROMPT
-   ------------------------------------------------------------ */
-
-function toggleMagic() {
-
-  magicEnabled =
-    !magicEnabled;
-
-  const button =
-    document.getElementById(
-      "magicButton"
-    );
-
-  const toggle =
-    document.getElementById(
-      "magicToggle"
-    );
-
-  if (magicEnabled) {
-
-    button.classList.remove(
-      "off"
-    );
-
-    toggle.classList.add(
-      "active"
-    );
-
-    showToast(
-      "Magic Prompt enabled"
-    );
-
-  } else {
-
-    button.classList.add(
-      "off"
-    );
-
-    toggle.classList.remove(
-      "active"
-    );
-
-    showToast(
-      "Magic Prompt disabled"
-    );
-
-  }
-
-}
-
-
-/* ------------------------------------------------------------
-   STYLE SELECTION
-   ------------------------------------------------------------ */
-
-document
-  .querySelectorAll(".style")
-  .forEach(function (button) {
-
-    button.addEventListener(
-      "click",
-      function () {
-
-        document
-          .querySelectorAll(".style")
-          .forEach(function (item) {
-
-            item.classList.remove(
-              "active"
-            );
-
-          });
-
-        button.classList.add(
-          "active"
-        );
-
-        selectedStyle =
-          button.dataset.style;
-
-      }
-    );
-
-  });
-
-
-/* ------------------------------------------------------------
-   RATIO SELECTION
-   ------------------------------------------------------------ */
-
-document
-  .querySelectorAll(".ratio")
-  .forEach(function (button) {
-
-    button.addEventListener(
-      "click",
-      function () {
-
-        document
-          .querySelectorAll(".ratio")
-          .forEach(function (item) {
-
-            item.classList.remove(
-              "active"
-            );
-
-          });
-
-        button.classList.add(
-          "active"
-        );
-
-        selectedRatio =
-          button.dataset.ratio;
-
-      }
-    );
-
-  });
-
-
-/* ------------------------------------------------------------
-   MAGIC ENHANCEMENT TEXT
-   ------------------------------------------------------------ */
-
-const magicTerms =
-  "hyper-photorealistic, authentic natural skin texture, visible fine pores, subtle subsurface scattering, realistic individual hair strands, physically accurate eyes, natural facial micro-detail, volumetric lighting, professional studio illumination, Hasselblad X2D 100C, 85mm lens, shallow depth of field, cinematic color science, realistic skin tones";
-
-
-/* ------------------------------------------------------------
-   GENERATE
-   ------------------------------------------------------------ */
-
-function generateAvatar() {
-
-  const raw =
-    promptElement.value.trim();
-
-  if (!raw) {
-
-    showToast(
-      "Please describe the human you want to create."
-    );
-
-    promptElement.focus();
-
-    return;
-
-  }
-
-
-  const gender =
-    document.getElementById(
-      "gender"
-    ).value;
-
-  const ethnicity =
-    document.getElementById(
-      "ethnicity"
-    ).value;
-
-
-  let finalPrompt =
-    raw;
-
-
-  if (selectedStyle) {
-
-    finalPrompt +=
-      ", " +
-      selectedStyle;
-
-  }
-
-
-  if (gender !== "Any") {
-
-    finalPrompt +=
-      ", " +
-      gender;
-
-  }
-
-
-  if (ethnicity !== "Any") {
-
-    finalPrompt +=
-      ", " +
-      ethnicity;
-
-  }
-
-
-  finalPrompt +=
-    ", " +
-    selectedRatio;
-
-
-  if (magicEnabled) {
-
-    finalPrompt +=
-      ", " +
-      magicTerms;
-
-  }
-
-
-  const result =
-    document.getElementById(
-      "result"
-    );
-
-  const generateButton =
-    document.getElementById(
-      "generateButton"
-    );
-
-  const status =
-    document.getElementById(
-      "generationStatus"
-    );
-
-  const fill =
-    document.getElementById(
-      "progressFill"
-    );
-
-  const percent =
-    document.getElementById(
-      "progressPercent"
-    );
-
-
-  result.classList.add(
-    "visible"
-  );
-
-  generateButton.disabled =
-    true;
-
-  generateButton.innerHTML =
-    "◌ Generating...";
-
-  fill.style.width =
-    "0%";
-
-  percent.textContent =
-    "0%";
-
-
-  const steps = [
-
-    {
-      progress: 8,
-      text: "Analyzing your prompt..."
-    },
-
-    {
-      progress: 18,
-      text: "Designing facial structure..."
-    },
-
-    {
-      progress: 31,
-      text: "Generating realistic anatomy..."
-    },
-
-    {
-      progress: 47,
-      text: "Rendering skin pores..."
-    },
-
-    {
-      progress: 61,
-      text: "Generating individual hair detail..."
-    },
-
-    {
-      progress: 75,
-      text: "Balancing volumetric light..."
-    },
-
-    {
-      progress: 87,
-      text: "Refining eyes and facial micro-detail..."
-    },
-
-    {
-      progress: 96,
-      text: "Applying photographic color science..."
-    },
-
-    {
-      progress: 100,
-      text: "Avatar ready."
-    }
-
-  ];
-
-
-  let index = 0;
-
-
-  const timer =
-    setInterval(function () {
-
-      const step =
-        steps[index];
-
-      if (!step) {
-
-        clearInterval(timer);
-
-        finishGeneration(
-          finalPrompt
-        );
-
-        return;
-
-      }
-
-
-      fill.style.width =
-        step.progress + "%";
-
-      percent.textContent =
-        step.progress + "%";
-
-      status.textContent =
-        step.text;
-
-      index++;
-
-    }, 430);
-
-}
-
-
-/* ------------------------------------------------------------
-   FINISH GENERATION
-   ------------------------------------------------------------ */
-
-function finishGeneration(
-  finalPrompt
-) {
-
-  const result =
-    document.getElementById(
-      "result"
-    );
-
-  const card =
-    result.querySelector(
-      ".result-card"
-    );
-
-  const button =
-    document.getElementById(
-      "generateButton"
-    );
-
-  const status =
-    document.getElementById(
-      "generationStatus"
-    );
-
-
-  status.textContent =
-    "Demo avatar generated successfully.";
-
-
-  /*
-   * WORKING DEMO IMAGE
-   *
-   * In production replace this URL with
-   * the image URL returned by Fal.ai,
-   * Replicate, or your own API.
-   */
-
-  const imageUrl =
-    getDemoImage();
-
-
-  card.innerHTML = `
-
-    <div class="result-top">
-
-      <div class="result-title">
-
-        <div class="result-icon">
-          ✓
-        </div>
-
-        <div>
-
-          <strong>
-            Avatar Ready
-          </strong>
-
-          <span>
-            Your PersonaAI demo portrait is ready.
-          </span>
-
-        </div>
-
-      </div>
-
-      <div class="result-percent">
-        100%
-      </div>
-
-    </div>
-
-    <div
-      style="
-        margin-top:15px;
-        overflow:hidden;
-        border-radius:17px;
-        background:#050507;
-      "
-    >
-
-      <img
-        src="${imageUrl}"
-        alt="Generated PersonaAI avatar"
-        style="
-          display:block;
-          width:100%;
-          max-height:650px;
-          object-fit:contain;
-        "
-      >
-
-    </div>
-
-    <div
-      style="
-        display:flex;
-        flex-wrap:wrap;
-        gap:8px;
-        margin-top:12px;
-      "
-    >
-
-      <button
-        class="modal-action"
-        style="flex:1;"
-        onclick="copyGeneratedPrompt()"
-      >
-        ⧉ Copy Prompt
-      </button>
-
-      <button
-        class="modal-action primary"
-        style="flex:1;"
-        onclick="openGeneratedAvatar()"
-      >
-        View Fullscreen
-      </button>
-
-    </div>
-
-  `;
-
-
-  button.disabled =
-    false;
-
-  button.innerHTML =
-    "✦ Generate Avatar";
-
-
-  currentAvatar = {
-
-    name:
-      "PersonaAI Generated Avatar",
-
-    prompt:
-      finalPrompt,
-
-    image:
-      imageUrl
-
-  };
-
-
-  showToast(
-    "Avatar generated successfully"
-  );
-
-}
-
-
-/* ------------------------------------------------------------
-   DEMO IMAGE
-   ------------------------------------------------------------ */
-
-function getDemoImage() {
-
-  /*
-   * Uses a public Unsplash image only
-   * for the standalone demo.
-   *
-   * Replace this function with your
-   * actual AI generation request.
-   */
-
-  const images = [
-
-    "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=1200&q=92",
-
-    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1200&q=92",
-
-    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=1200&q=92",
-
-    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1200&q=92"
-
-  ];
-
-  return images[
-    Math.floor(
-      Math.random() *
-      images.length
-    )
-  ];
-
-}
-
-
-/* ============================================================
-   PRODUCTION API INTEGRATION
-   ============================================================
-
-   Replace getDemoImage() with something like:
-
-   async function generateWithBackend(prompt) {
-
-     const response =
-       await fetch("/api/generate", {
-         method: "POST",
-
-         headers: {
-           "Content-Type": "application/json"
-         },
-
-         body: JSON.stringify({
-           prompt: prompt,
-           aspect_ratio: selectedRatio,
-           style: selectedStyle,
-           gender:
-             document.getElementById("gender").value,
-           ethnicity:
-             document.getElementById("ethnicity").value
-         })
-       });
-
-     if (!response.ok) {
-       throw new Error(
-         "Generation request failed."
-       );
-     }
-
-     const data =
-       await response.json();
-
-     return data.imageUrl;
-   }
-
-   IMPORTANT:
-   Never place your Fal.ai or Replicate
-   API secret in this HTML file.
-
-   Your server / Supabase Edge Function /
-   Next.js API route should hold the secret.
-
-   ============================================================ */
-
-
-/* ------------------------------------------------------------
-   OPEN AVATAR
-   ------------------------------------------------------------ */
-
-function openAvatar(button) {
-
-  const card =
-    button.closest(
-      ".avatar"
-    );
-
-  currentAvatar = {
-
-    name:
-      card.dataset.name,
-
-    prompt:
-      card.dataset.prompt,
-
-    image:
-      card.dataset.image
-
-  };
-
-
-  document.getElementById(
-    "modalName"
-  ).textContent =
-    currentAvatar.name;
-
-
-  document.getElementById(
-    "modalPrompt"
-  ).textContent =
-    currentAvatar.prompt;
-
-
-  document.getElementById(
-    "modalImage"
-  ).src =
-    currentAvatar.image;
-
-
-  document.getElementById(
-    "modalImage"
-  ).alt =
-    currentAvatar.name;
-
-
-  document
-    .getElementById("modal")
-    .classList.add(
-      "open"
-    );
-
-
-  document.body.style.overflow =
-    "hidden";
-
-}
-
-
-/* ------------------------------------------------------------
-   OPEN GENERATED AVATAR
-   ------------------------------------------------------------ */
-
-function openGeneratedAvatar() {
-
-  document.getElementById(
-    "modalName"
-  ).textContent =
-    currentAvatar.name;
-
-
-  document.getElementById(
-    "modalPrompt"
-  ).textContent =
-    currentAvatar.prompt;
-
-
-  document.getElementById(
-    "modalImage"
-  ).src =
-    currentAvatar.image;
-
-
-  document.getElementById(
-    "modalImage"
-  ).alt =
-    currentAvatar.name;
-
-
-  document
-    .getElementById("modal")
-    .classList.add(
-      "open"
-    );
-
-
-  document.body.style.overflow =
-    "hidden";
-
-}
-
-
-/* ------------------------------------------------------------
-   CLOSE MODAL
-   ------------------------------------------------------------ */
-
-function closeModal() {
-
-  document
-    .getElementById("modal")
-    .classList.remove(
-      "open"
-    );
-
-  document.body.style.overflow =
-    "";
-
-}
-
-
-function closeFromBackground(
-  event
-) {
-
-  if (
-    event.target.id ===
-    "modal"
-  ) {
-
-    closeModal();
-
-  }
-
-}
-
-
-/* ------------------------------------------------------------
-   REMIX
-   ------------------------------------------------------------ */
-
-function remixAvatar(button) {
-
-  const card =
-    button.closest(
-      ".avatar"
-    );
-
-  promptElement.value =
-    card.dataset.prompt;
-
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
-
-
-  setTimeout(function () {
-
-    promptElement.focus();
-
-  }, 550);
-
-
-  showToast(
-    "Prompt loaded into PersonaAI"
-  );
-
-}
-
-
-/* ------------------------------------------------------------
-   VARIATION
-   ------------------------------------------------------------ */
-
-function variation() {
-
-  promptElement.value =
-    currentAvatar.prompt;
-
-
-  closeModal();
-
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
-
-
-  setTimeout(function () {
-
-    promptElement.focus();
-
-  }, 500);
-
-
-  showToast(
-    "Variation prompt loaded"
-  );
-
-}
-
-
-/* ------------------------------------------------------------
-   COPY PROMPT
-   ------------------------------------------------------------ */
-
-async function copyPrompt() {
-
-  try {
-
-    await navigator.clipboard.writeText(
-      currentAvatar.prompt
-    );
-
-    showToast(
-      "Prompt copied"
-    );
-
-  } catch {
-
-    fallbackCopy(
-      currentAvatar.prompt
-    );
-
-  }
-
-}
-
-
-async function copyGeneratedPrompt() {
-
-  await copyPrompt();
-
-}
-
-
-function fallbackCopy(
-  text
-) {
-
-  const textarea =
-    document.createElement(
-      "textarea"
-    );
-
-  textarea.value =
-    text;
-
-  textarea.style.position =
-    "fixed";
-
-  textarea.style.opacity =
-    "0";
-
-  document.body.appendChild(
-    textarea
-  );
-
-  textarea.select();
-
-  try {
-
-    document.execCommand(
-      "copy"
-    );
-
-    showToast(
-      "Prompt copied"
-    );
-
-  } catch {
-
-    showToast(
-      "Unable to copy automatically"
-    );
-
-  }
-
-  textarea.remove();
-
-}
-
-
-/* ------------------------------------------------------------
-   DOWNLOAD
-   ------------------------------------------------------------ */
-
-async function downloadAvatar() {
-
-  try {
-
-    const response =
-      await fetch(
-        currentAvatar.image
-      );
-
-    if (!response.ok) {
-
-      throw new Error(
-        "Image unavailable"
-      );
-
-    }
-
-    const blob =
-      await response.blob();
-
-    const objectUrl =
-      URL.createObjectURL(
-        blob
-      );
-
-    const link =
-      document.createElement(
-        "a"
-      );
-
-    link.href =
-      objectUrl;
-
-    link.download =
-      "personaai-avatar.jpg";
-
-    document.body.appendChild(
-      link
-    );
-
-    link.click();
-
-    link.remove();
-
-    URL.revokeObjectURL(
-      objectUrl
-    );
-
-    showToast(
-      "HD download started"
-    );
-
-  } catch {
-
-    /*
-     * Some remote image hosts
-     * prevent browser downloads.
-     */
-
-    window.open(
-      currentAvatar.image,
-      "_blank"
-    );
-
-    showToast(
-      "Opening image"
-    );
-
-  }
-
-}
-
-
-/* ------------------------------------------------------------
-   TOAST
-   ------------------------------------------------------------ */
-
-let toastTimer;
-
-function showToast(
-  message
-) {
-
-  const toast =
-    document.getElementById(
-      "toast"
-    );
-
-  const text =
-    document.getElementById(
-      "toastMessage"
-    );
-
-  text.textContent =
-    message;
-
-  toast.classList.add(
-    "show"
-  );
-
-  clearTimeout(
-    toastTimer
-  );
-
-  toastTimer =
-    setTimeout(function () {
-
-      toast.classList.remove(
-        "show"
-      );
-
-    }, 2600);
-
-}
-
-
-/* ------------------------------------------------------------
-   MOBILE MENU
-   ------------------------------------------------------------ */
-
-function mobileMenu() {
-
-  const links =
-    document.querySelector(
-      ".nav-links"
-    );
-
-  if (
-    getComputedStyle(links).display
-    === "none"
-  ) {
-
-    links.style.display =
-      "flex";
-
-    links.style.position =
-      "absolute";
-
-    links.style.top =
-      "67px";
-
-    links.style.left =
-      "13px";
-
-    links.style.right =
-      "13px";
-
-    links.style.padding =
-      "15px";
-
-    links.style.flexDirection =
-      "column";
-
-    links.style.alignItems =
-      "flex-start";
-
-    links.style.background =
-      "rgba(15,15,20,.97)";
-
-    links.style.border =
-      "1px solid rgba(255,255,255,.08)";
-
-    links.style.borderRadius =
-      "15px";
-
-    links.style.backdropFilter =
-      "blur(20px)";
-
-  } else {
-
-    links.style.display =
-      "";
-
-  }
-
-}
-
-
-/* ------------------------------------------------------------
-   ESC KEY
-   ------------------------------------------------------------ */
-
-document.addEventListener(
-  "keydown",
-  function (event) {
-
-    if (
-      event.key ===
-      "Escape"
-    ) {
-
-      closeModal();
-
-    }
-
-  }
-);
-
-
-/* ------------------------------------------------------------
-   ENTER / CTRL+ENTER
-   ------------------------------------------------------------ */
-
-promptElement.addEventListener(
-  "keydown",
-  function (event) {
-
-    /*
-     * Ctrl + Enter / Cmd + Enter
-     * starts generation.
-     */
-
-    if (
-      (event.ctrlKey ||
-       event.metaKey) &&
-      event.key === "Enter"
-    ) {
-
-      event.preventDefault();
-
-      generateAvatar();
-
-    }
-
-  }
-);
-
-
-/* ------------------------------------------------------------
-   INITIALIZATION
-   ------------------------------------------------------------ */
-
-console.log(
-  "PersonaAI initialized successfully."
-);
-
-</script>
-
+    <script>
+        // Lucide Icons Initialization
+        lucide.createIcons();
+
+        // State Variables
+        let isMagicActive = false;
+        let selectedStyle = '';
+        let currentAspectRatio = '1:1';
+        let currentGeneratedUrl = '';
+        let currentPromptText = '';
+
+        // Animated Cycling Placeholders
+        const cyclingPrompts = [
+            "30-year-old Japanese architect in a rain-slicked street, 85mm portrait...",
+            "Elderly French woodworker with warm morning light filtering into studio...",
+            "Editorial fashion model in Tokyo neon night, dynamic angle, dramatic shadows...",
+            "Cyberpunk engineer with subtle optic implants, cinematic volumetric lighting...",
+            "Raw portrait of a Scandinavian sailor, realistic skin texture, natural pores..."
+        ];
+
+        let placeholderIdx = 0;
+        const promptInput = document.getElementById('promptInput');
+
+        setInterval(() => {
+            if (!document.activeElement === promptInput && promptInput.value === '') {
+                placeholderIdx = (placeholderIdx + 1) % cyclingPrompts.length;
+                promptInput.setAttribute('placeholder', cyclingPrompts[placeholderIdx]);
+            }
+        }, 4000);
+
+        // Community Showcase Pre-generated Data
+        const showcaseData = [
+            {
+                img: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+                prompt: '24-year-old Parisian female model, natural freckles, volumetric soft window light, shot on 85mm lens, raw photo texture.',
+                author: '@alex_design'
+            },
+            {
+                img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
+                prompt: '35-year-old Scandinavian tech founder, subtle beard trim, rim lighting, dramatic studio background, ultra-sharp detail.',
+                author: '@synth_art'
+            },
+            {
+                img: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+                prompt: 'Editorial portrait of young woman in neon urban rain, cinematic reflection in eyes, Hasselblad X2D quality.',
+                author: '@lens_master'
+            },
+            {
+                img: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=800&q=80',
+                prompt: 'Vintage 35mm film aesthetic, young man in oversized coat, natural grain, golden hour sunset light, authentic skin tones.',
+                author: '@retro_ai'
+            },
+            {
+                img: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80',
+                prompt: 'High fashion portrait, vibrant studio backdrop, subsurface scattering skin details, catchlight in dark brown eyes.',
+                author: '@vogue_gen'
+            },
+            {
+                img: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80',
+                prompt: 'Elderly artist with serene expression, deep character lines, warm side lighting, raw photography style.',
+                author: '@human_story'
+            }
+        ];
+
+        // Populate Showcase Grid
+        const showcaseGrid = document.getElementById('showcaseGrid');
+        function renderShowcase() {
+            showcaseGrid.innerHTML = showcaseData.map((item, index) => `
+                <div class="glass-panel glass-panel-interactive rounded-2xl overflow-hidden group relative flex flex-col">
+                    <div class="relative aspect-square overflow-hidden bg-zinc-900">
+                        <img src="${item.img}" alt="Avatar Showcase" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 flex flex-col justify-end gap-2">
+                            <p class="text-xs text-zinc-200 line-clamp-3 font-normal">${item.prompt}</p>
+                            <div class="flex items-center justify-between pt-2 border-t border-white/10">
+                                <span class="text-[10px] text-zinc-400">${item.author}</span>
+                                <button onclick="remixPrompt('${item.prompt.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-lg btn-gradient text-[11px] font-semibold text-white flex items-center gap-1 shadow">
+                                    <i data-lucide="repeat" class="w-3 h-3"></i> Remix
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+        renderShowcase();
+
+        // Magic Prompt Enhancer Toggle
+        function toggleMagicEnhancer() {
+            isMagicActive = !isMagicActive;
+            const badge = document.getElementById('magicBadge');
+            const btn = document.getElementById('magicEnhancerBtn');
+
+            if (isMagicActive) {
+                badge.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+                btn.classList.add('border-violet-500/50', 'bg-violet-500/20', 'text-violet-200');
+                showToast('Magic Prompt Enhancer Activated');
+            } else {
+                badge.className = 'w-2 h-2 rounded-full bg-zinc-500';
+                btn.classList.remove('border-violet-500/50', 'bg-violet-500/20', 'text-violet-200');
+                showToast('Magic Enhancer Deactivated');
+            }
+        }
+
+        // Quick Pill Selection
+        function selectStyle(btnElement, styleName) {
+            document.querySelectorAll('.style-pill').forEach(el => {
+                el.classList.remove('bg-violet-600', 'text-white', 'border-violet-400');
+                el.classList.add('glass-panel', 'text-zinc-300');
+            });
+
+            if (selectedStyle === styleName) {
+                selectedStyle = '';
+            } else {
+                selectedStyle = styleName;
+                btnElement.classList.remove('glass-panel', 'text-zinc-300');
+                btnElement.classList.add('bg-violet-600', 'text-white', 'border-violet-400');
+            }
+        }
+
+        // Aspect Ratio Selector
+        function setAspectRatio(btnElement, ratio) {
+            document.querySelectorAll('.aspect-btn').forEach(el => {
+                el.classList.remove('bg-violet-600', 'text-white');
+                el.classList.add('text-zinc-400');
+            });
+            btnElement.classList.remove('text-zinc-400');
+            btnElement.classList.add('bg-violet-600', 'text-white');
+            currentAspectRatio = ratio;
+        }
+
+        // Avatar Generation Process Simulation
+        function generateAvatar() {
+            let userPrompt = promptInput.value.trim();
+            if (!userPrompt) {
+                userPrompt = promptInput.getAttribute('placeholder') || "Photorealistic human portrait";
+                promptInput.value = userPrompt;
+            }
+
+            // Append Magic Modifiers if active
+            if (isMagicActive) {
+                userPrompt += ", subsurface skin scattering, volumetric studio rim light, Hasselblad X2D 100C, natural skin pores, 8k raw detail";
+            }
+            if (selectedStyle) {
+                userPrompt += `, ${selectedStyle} visual tone`;
+            }
+
+            currentPromptText = userPrompt;
+
+            // Display Canvas Section
+            const canvasSection = document.getElementById('canvasSection');
+            const loadingState = document.getElementById('loadingState');
+            const resultState = document.getElementById('resultState');
+            const progressBar = document.getElementById('progressBar');
+            const progressPercent = document.getElementById('progressPercent');
+            const microStepText = document.getElementById('microStepText');
+
+            canvasSection.classList.remove('hidden');
+            loadingState.classList.remove('hidden');
+            resultState.classList.add('hidden');
+            
+            // Scroll smoothly to generator canvas
+            canvasSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Micro steps updates
+            const microSteps = [
+                { percent: 15, text: 'Constructing 3D facial mesh...' },
+                { percent: 35, text: 'Simulating subsurface skin scattering...' },
+                { percent: 65, text: 'Balancing volumetric lighting & iris reflections...' },
+                { percent: 85, text: 'Applying realistic epidermal porosity...' },
+                { percent: 100, text: 'Finalizing 8K raw render...' }
+            ];
+
+            let stepIdx = 0;
+            progressBar.style.width = '0%';
+            progressPercent.innerText = '0%';
+
+            const interval = setInterval(() => {
+                if (stepIdx < microSteps.length) {
+                    const step = microSteps[stepIdx];
+                    progressBar.style.width = `${step.percent}%`;
+                    progressPercent.innerText = `${step.percent}%`;
+                    microStepText.innerText = step.text;
+                    stepIdx++;
+                } else {
+                    clearInterval(interval);
+                    finishGeneration();
+                }
+            }, 700);
+        }
+
+        function finishGeneration() {
+            const loadingState = document.getElementById('loadingState');
+            const resultState = document.getElementById('resultState');
+            const generatedImage = document.getElementById('generatedImage');
+            const appliedPromptText = document.getElementById('appliedPromptText');
+
+            // Pick dynamic avatar image based on showcase pool or high-res Unsplash photos
+            const pool = [
+                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1000&q=80',
+                'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=1000&q=80',
+                'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1000&q=80',
+                'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=1000&q=80'
+            ];
+            
+            currentGeneratedUrl = pool[Math.floor(Math.random() * pool.length)];
+            generatedImage.src = currentGeneratedUrl;
+            appliedPromptText.innerText = currentPromptText;
+
+            loadingState.classList.add('hidden');
+            resultState.classList.remove('hidden');
+
+            showToast('Avatar generated successfully!');
+        }
+
+        // Remix Prompt Functionality
+        function remixPrompt(promptText) {
+            promptInput.value = promptText;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            promptInput.focus();
+            showToast('Prompt copied to generator!');
+        }
+
+        // Toast Notification System
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            toastMsg.innerText = message;
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Modal Logic
+        function openModalFromCanvas() {
+            const modal = document.getElementById('assetModal');
+            document.getElementById('modalImg').src = currentGeneratedUrl;
+            document.getElementById('modalPrompt').innerText = currentPromptText;
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('assetModal').classList.add('hidden');
+        }
+
+        function remixFromModal() {
+            closeModal();
+            remixPrompt(currentPromptText);
+        }
+
+        function downloadHD() {
+            showToast('Preparing 8K Ultra-HD Download...');
+        }
+
+        function copyCurrentPrompt() {
+            navigator.clipboard.writeText(currentPromptText);
+            showToast('Prompt copied to clipboard!');
+        }
+    </script>
 </body>
 </html>
