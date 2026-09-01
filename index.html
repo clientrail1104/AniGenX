@@ -1,393 +1,3070 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VANTA Motion — AI Image-to-Video Studio</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-<style>
-*{box-sizing:border-box}html,body,#root{margin:0;min-height:100%;background:#07080c;color:#f4f4f5;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-body{background-image:radial-gradient(circle at 80% 0%,rgba(124,58,237,.14),transparent 30%),radial-gradient(circle at 0% 70%,rgba(59,130,246,.06),transparent 28%)}
-::-webkit-scrollbar{width:7px;height:7px}::-webkit-scrollbar-thumb{background:#27272f;border-radius:20px}
-.glass{background:rgba(13,15,22,.82);backdrop-filter:blur(18px)}
-.card{background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018));border:1px solid rgba(255,255,255,.07)}
-.glow{box-shadow:0 0 50px rgba(124,58,237,.16)}
-.drop:hover{border-color:rgba(139,92,246,.55);background:rgba(139,92,246,.055)}
-.drop.active{border-color:#a78bfa;background:rgba(139,92,246,.12)}
-.range{appearance:none;width:100%;height:5px;border-radius:20px;outline:0;background:linear-gradient(90deg,#8b5cf6 var(--v),#292a32 var(--v))}
-.range::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid #8b5cf6;box-shadow:0 0 20px rgba(139,92,246,.5)}
-.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
-.pulse{animation:pulse 1.8s ease-in-out infinite}@keyframes pulse{50%{opacity:.35}}
-.modal{background:rgba(0,0,0,.75);backdrop-filter:blur(10px)}
-.shine{position:relative;overflow:hidden}.shine:after{content:"";position:absolute;inset:0;transform:translateX(-110%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);animation:shine 2.2s infinite}@keyframes shine{to{transform:translateX(110%)}}
-</style>
-</head>
-<body>
-<div id="root"></div>
-<script>
-(function(){
-"use strict";
-const h=React.createElement;
-const {useState,useMemo,useRef,useEffect}=React;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0A0A0C">
+  <meta name="description" content="PersonaAI — Generate hyper-photorealistic human avatars from a single prompt.">
 
-const formats=[
- {id:"webm",name:"WebM",detail:"VP9 · browser encoded · watchable",ext:"webm",native:true},
- {id:"mp4",name:"MP4 H.264",detail:"H.264 · FFmpeg transcoded · watchable",ext:"mp4",native:false},
- {id:"hevc",name:"MP4 HEVC",detail:"HEVC · FFmpeg transcoded · watchable",ext:"mp4",native:false},
- {id:"prores",name:"MOV ProRes",detail:"ProRes · FFmpeg transcoded · watchable",ext:"mov",native:false},
- {id:"mkv",name:"MKV",detail:"MKV/H.264 · FFmpeg transcoded · watchable",ext:"mkv",native:false},
- {id:"avi",name:"AVI",detail:"AVI/H.264 · FFmpeg transcoded · watchable",ext:"avi",native:false}
-];
-const presets=[
- ["Cinematic","Anamorphic / Film Grain","◒"],["Anime","Shinkai Style","✦"],["3D Render","Unreal Engine 5","◇"],
- ["Cyberpunk","Neon / Volumetric","⌁"],["Photorealistic","8K / Studio Lighting","◉"],["Claymation","Stop-Motion / Texture","●"]
-];
-const paths=[["panL","Pan Left","←"],["panR","Pan Right","→"],["tiltU","Tilt Up","↑"],["tiltD","Tilt Down","↘"],["zoomIn","Zoom In","+"],["zoomOut","Zoom Out","−"],["rollCW","Roll CW","↻"],["rollCCW","Roll CCW","↺"]];
+  <title>PersonaAI — Photorealistic Human Avatars</title>
 
-function fmtTime(s){
- s=Math.max(0,Math.floor(s));return String(Math.floor(s/3600)).padStart(2,"0")+":"+String(Math.floor(s%3600/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")
-}
-function toastMsg(setToast,msg){setToast(msg);setTimeout(()=>setToast(""),2800)}
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-function App(){
- const [file,setFile]=useState(null),[drag,setDrag]=useState(false),[reading,setReading]=useState(false);
- const [prompt,setPrompt]=useState(""),[motion,setMotion]=useState(62),[selectedPaths,setSelectedPaths]=useState(["panR","zoomIn"]);
- const [preset,setPreset]=useState("Cinematic"),[resolution,setResolution]=useState("4K");
- const [duration,setDuration]=useState({h:0,m:0,s:6}),[credits,setCredits]=useState(12);
- const [queue,setQueue]=useState([]),[gallery,setGallery]=useState([]),[toast,setToast]=useState("");
- const [exportItem,setExportItem]=useState(null),[exportFormat,setExportFormat]=useState("webm"),[exportQuality,setExportQuality]=useState("High");
- const input=useRef(null);
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 
- useEffect(()=>{setGallery([
-  {id:"demo1",title:"Neon Atelier",preset:"Cyberpunk",resolution:"4K",duration:6,isVideo:true,src:""},
-  {id:"demo2",title:"Golden Horizon",preset:"Cinematic",resolution:"8K",duration:6,isVideo:true,src:""},
-  {id:"demo3",title:"Quiet Architecture",preset:"Photorealistic",resolution:"4K",duration:6,isVideo:true,src:""}
- ])},[]);
+  <style>
+    /* =========================================================
+       PERSONA AI
+       Single-file HTML application
+       ========================================================= */
 
- const totalSeconds=useMemo(()=>Math.min(359999,Math.max(1,(+duration.h||0)*3600+(+duration.m||0)*60+(+duration.s||0))),[duration]);
- const durationLabel=fmtTime(totalSeconds);
+    :root {
+      --bg: #0A0A0C;
+      --bg-2: #0E0E12;
+      --panel: rgba(18, 18, 24, 0.68);
+      --panel-solid: #121218;
+      --white: #ffffff;
+      --text: #f5f5f7;
+      --muted: rgba(245,245,247,.48);
+      --muted-2: rgba(245,245,247,.28);
+      --border: rgba(255,255,255,.085);
 
- function ingest(f){
-  if(!f)return;
-  const ext=(f.name.split(".").pop()||"").toLowerCase();
-  const ok=["png","jpg","jpeg","webp","heic","tif","tiff","psd","bmp","svg"].includes(ext);
-  if(!ok){toastMsg(setToast,"Unsupported image format.");return}
-  setReading(true);
-  const r=new FileReader();
-  r.onload=()=>{setTimeout(()=>{setFile({name:f.name,size:f.size,url:r.result,ext});setReading(false)},450)};
-  r.onerror=()=>{setReading(false);toastMsg(setToast,"Could not read the image.")};
-  r.readAsDataURL(f);
- }
+      --violet: #8B5CF6;
+      --violet-2: #A78BFA;
+      --blue: #5B8CFF;
+      --cyan: #55D6FF;
 
- function togglePath(id){setSelectedPaths(x=>x.includes(id)?x.filter(y=>y!==id):x.concat(id))}
+      --radius: 24px;
 
- function generate(){
-  if(!file){toastMsg(setToast,"Upload an image first.");return}
-  if(credits<1){toastMsg(setToast,"No render credits remaining.");return}
-  const id="job-"+Date.now();
-  setCredits(x=>x-1);
-  const title=file.name.replace(/\.[^/.]+$/,"").slice(0,30)||"VANTA Master";
-  const job={id,title,preset,resolution,prompt,duration:totalSeconds,src:file.url,progress:0,step:"Analyzing Image Structure..."};
-  setQueue(q=>q.concat(job));
-  const stages=[[8,"Analyzing Image Structure..."],[25,"Mapping Depth & Subject Geometry..."],[45,"Injecting Motion..."],[68,"Synthesizing Temporal Frames..."],[86,"Upscaling to "+resolution+"..."],[97,"Finalizing Master Asset..."]];
-  stages.forEach((st,i)=>setTimeout(()=>setQueue(q=>q.map(x=>x.id===id?Object.assign({},x,{progress:st[0],step:st[1]}):x)),(i+1)*850));
-  setTimeout(()=>{
-   setQueue(q=>q.filter(x=>x.id!==id));
-   setGallery(g=>[{id,title,preset,resolution,prompt,duration:totalSeconds,src:file.url,isVideo:false,poster:file.url,generated:false},...g]);
-   toastMsg(setToast,"AI generation complete. Master preview is ready.");
-  },6000);
- }
-
-
- function analyzePrompt(text){
-   const s=(text||"").toLowerCase();
-   const has=(...words)=>words.some(w=>s.includes(w));
-   return {
-    zoom:has("zoom","push in","push-in","dolly in","close up","close-up"),
-    zoomOut:has("zoom out","pull out","pull-out","dolly out"),
-    panLeft:has("pan left","move left","camera left","slide left"),
-    panRight:has("pan right","move right","camera right","slide right"),
-    tiltUp:has("tilt up","move up","rise","rising","camera upward"),
-    tiltDown:has("tilt down","move down","descend","falling","camera downward"),
-    orbit:has("orbit","orbital","circle around","360","rotate around"),
-    rollCW:has("roll clockwise","clockwise roll","roll right"),
-    rollCCW:has("roll counterclockwise","counter-clockwise","counterclockwise","roll left"),
-    sway:has("sway","swaying","wind","breeze","flowing"),
-    shake:has("shake","handheld","impact","vibration","tremble"),
-    parallax:has("parallax","depth","3d depth","layered"),
-    cinematic:has("cinematic","film","anamorphic","movie"),
-    night:has("night","dark","moonlight"),
-    warm:has("warm","sunset","golden hour","golden-hour"),
-    cool:has("cool","blue light","icy"),
-    vignette:has("vignette","dramatic lighting")
-   };
- }
- function promptMotion(item){ return analyzePrompt((item.prompt||"")+" "+(prompt||"")); }
- async function encodeWatchable(item, preferredFormat){
-  if(!item.src || !item.src.startsWith("data:image/")) throw new Error("This gallery item has no source image. Generate a new master first.");
-
-  const img=new Image();
-  img.decoding="async";
-  img.src=item.src;
-  await new Promise((resolve,reject)=>{
-    img.onload=resolve;
-    img.onerror=()=>reject(new Error("The source image cannot be decoded by this browser. Try PNG/JPG/WebP."));
-  });
-
-  const w=resolution==="8K"?1920:resolution==="4K"?1280:960;
-  const hgt=Math.round(w*9/16);
-  const canvas=document.createElement("canvas");
-  canvas.width=w; canvas.height=hgt;
-  const ctx=canvas.getContext("2d",{alpha:false});
-  if(!ctx || !canvas.captureStream) throw new Error("This browser cannot create a video stream.");
-
-  const stream=canvas.captureStream(30);
-  const candidates = preferredFormat==="mp4"
-    ? ["video/mp4;codecs=avc1.42E01E","video/mp4"]
-    : ["video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"];
-
-  const mime=candidates.find(x=>window.MediaRecorder && MediaRecorder.isTypeSupported(x));
-  if(!mime) return null; // caller will use FFmpeg server
-
-  const rec=new MediaRecorder(stream,{
-    mimeType:mime,
-    videoBitsPerSecond:exportQuality==="Extreme"?12000000:exportQuality==="High"?7000000:3500000
-  });
-
-  const chunks=[];
-  rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
-  const stopped=new Promise((resolve,reject)=>{
-    rec.onstop=resolve;
-    rec.onerror=e=>reject(e.error||new Error("Browser video recorder failed."));
-  });
-  rec.start(200);
-
-  const seconds=Math.max(1,Number(item.duration)||1);
-  const frames=Math.max(30,Math.round(seconds*30));
-  let frame=0;
-  const motionText=((item.prompt||prompt||"")+" "+selectedPaths.join(" ")).toLowerCase();
-
-  const draw=()=>{
-    const t=frame/Math.max(1,frames-1);
-    const ease=.5-Math.cos(t*Math.PI)/2;
-    const zoom=1+.055*ease+(motionText.includes("zoom")?0.055*ease:0);
-    const pan=Math.sin(t*Math.PI*2)*(.025+(motionText.includes("pan")||motionText.includes("orbit")?.055:0));
-    const vertical=Math.cos(t*Math.PI*2)*(.018+(motionText.includes("tilt")?.035:0));
-
-    const iw=img.naturalWidth||img.width, ih=img.naturalHeight||img.height;
-    const scale=Math.max(w*zoom/iw,hgt*zoom/ih);
-    const dw=iw*scale, dh=ih*scale;
-    ctx.fillStyle="#050507"; ctx.fillRect(0,0,w,hgt);
-    ctx.drawImage(img,(w-dw)/2+pan*w,(hgt-dh)/2+vertical*hgt,dw,dh);
-
-    const vg=ctx.createRadialGradient(w/2,hgt/2,Math.min(w,hgt)*.15,w/2,hgt/2,Math.max(w,hgt)*.7);
-    vg.addColorStop(0,"rgba(0,0,0,0)");
-    vg.addColorStop(1,"rgba(0,0,0,.42)");
-    ctx.fillStyle=vg;ctx.fillRect(0,0,w,hgt);
-
-    frame++;
-    if(frame<frames) requestAnimationFrame(draw);
-    else setTimeout(()=>rec.stop(),220);
-  };
-  draw();
-  await stopped;
-  if(!chunks.length) throw new Error("The browser produced an empty video.");
-  return {
-    blob:new Blob(chunks,{type:mime}),
-    mime,
-    ext:mime.startsWith("video/mp4")?"mp4":"webm"
-  };
- }
-
- async function requestTranscode(sourceBlob, sourceName, targetFormat){
-   const fd=new FormData();
-   fd.append("video",sourceBlob,sourceName);
-   fd.append("format",targetFormat);
-   fd.append("quality",exportQuality);
-   fd.append("filename",(exportItem.title||"vanta-master"));
-   fd.append("duration",String(exportItem.duration));
-
-   let response;
-   try{
-     response=await fetch("/api/transcode",{method:"POST",body:fd});
-   }catch(e){
-     throw new Error("FFmpeg server is not connected. Start the VANTA transcoder server before exporting this format.");
-   }
-   if(!response.ok){
-     let detail="";
-     try{const j=await response.json();detail=j.error||""}catch(_){}
-     throw new Error(detail||"FFmpeg transcoding failed.");
-   }
-   return await response.blob();
- }
- async function exportNow(){
-  if(!exportItem)return;
-  try{
-    const selected=formats.find(x=>x.id===exportFormat);
-    let result=null;
-
-    // Try browser-native encoding first. Safari commonly supports H.264/MP4
-    // even when it does not support WebM.
-    if(exportFormat==="webm") result=await encodeWatchable(exportItem,"webm");
-    else if(exportFormat==="mp4") result=await encodeWatchable(exportItem,"mp4");
-
-    if(result){
-      const url=URL.createObjectURL(result.blob);
-      const base=(exportItem.title||"vanta-master").replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
-      const a=document.createElement("a");
-      a.href=url;
-      a.download=base+"-"+exportItem.duration+"s."+result.ext;
-      document.body.appendChild(a);a.click();a.remove();
-      setGallery(g=>g.map(x=>x.id===exportItem.id?Object.assign({},x,{isVideo:true,src:url,generated:true}):x));
-      setExportItem(null);
-      toastMsg(setToast,"Watchable "+(result.ext==="mp4"?"MP4 H.264":"WebM")+" downloaded successfully.");
-      return;
+      --shadow-glow:
+        0 0 90px rgba(139,92,246,.14),
+        0 0 35px rgba(91,140,255,.08);
     }
 
-    // If the browser cannot natively encode the requested container,
-    // create a real browser-supported source and let FFmpeg make the exact target.
-    const source=await encodeWatchable(exportItem,"mp4") || await encodeWatchable(exportItem,"webm");
-    if(!source) throw new Error("This browser cannot encode a video locally. Connect the FFmpeg server.");
-    const output=await requestTranscode(source.blob,"vanta-master."+source.ext,exportFormat);
-    const url=URL.createObjectURL(output);
-    const base=(exportItem.title||"vanta-master").replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
-    const a=document.createElement("a");
-    a.href=url;
-    a.download=base+"-"+exportItem.duration+"s."+selected.ext;
-    document.body.appendChild(a);a.click();a.remove();
-    setExportItem(null);
-    toastMsg(setToast,"Real "+selected.name+" video downloaded successfully.");
-  }catch(e){
-    console.error("VANTA export:",e);
-    toastMsg(setToast,e.message||"Video export failed.");
-  }
- }
- return h("div",{className:"min-h-screen"},
-  h("header",{className:"sticky top-0 z-40 h-[70px] border-b border-white/5 glass"},
-   h("div",{className:"max-w-[1800px] mx-auto h-full px-5 flex items-center justify-between"},
-    h("div",{className:"flex items-center gap-3"},
-     h("div",{className:"w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-400/20 flex items-center justify-center glow"},"✦"),
-     h("div",null,h("div",{className:"font-bold tracking-[.18em] text-sm"},"VANTA",h("span",{className:"text-violet-400"},"/"),"MOTION"),h("div",{className:"text-[9px] text-zinc-600 tracking-[.2em] uppercase"},"Image-to-Video AI Engine"))
-    ),
-    h("div",{className:"flex items-center gap-2"},
-     h("div",{className:"px-3 py-2 rounded-xl border border-white/5 bg-white/[.025] text-[10px]"},"Credits ",h("b",{className:"text-violet-300"},credits)),
-     h("button",{onClick:()=>toastMsg(setToast,"Stripe Checkout should be connected through the server endpoint /api/create-checkout-session."),className:"px-3 py-2 rounded-xl bg-violet-500 hover:bg-violet-400 text-xs font-semibold"},"Buy Credits")
-    )
-   )
-  ),
-  h("main",{className:"max-w-[1800px] mx-auto grid lg:grid-cols-[390px_1fr]"},
-   h("aside",{className:"border-r border-white/5 bg-[#0a0b10] p-5 lg:p-6 lg:sticky lg:top-[70px] lg:h-[calc(100vh-70px)] overflow-y-auto"},
-    h("div",{className:"flex justify-between items-start mb-5"},h("div",null,h("div",{className:"font-semibold text-sm"},"Generation Controls"),h("div",{className:"text-[10px] text-zinc-600 mt-1"},"Create a complete motion recipe.")),h("button",{onClick:()=>{setPrompt("");setMotion(62);setPreset("Cinematic");setResolution("4K");setDuration({h:0,m:0,s:6})},className:"text-zinc-600 hover:text-white"},"↻")),
-    h("label",{className:"text-[9px] uppercase tracking-widest text-zinc-600"},"01 / Source Image"),
-    h("div",{onClick:()=>input.current.click(),onDragOver:e=>{e.preventDefault();setDrag(true)},onDragLeave:()=>setDrag(false),onDrop:e=>{e.preventDefault();setDrag(false);ingest(e.dataTransfer.files[0])},className:"drop "+(drag?"active ":"")+"mt-2 min-h-[160px] rounded-2xl border border-dashed border-zinc-700 flex items-center justify-center text-center p-4 cursor-pointer"},
-     h("input",{ref:input,type:"file",hidden:true,accept:".png,.jpg,.jpeg,.webp,.heic,.tif,.tiff,.psd,.bmp,.svg",onChange:e=>ingest(e.target.files[0])}),
-     reading?h("div",null,h("div",{className:"text-2xl spin mb-2"},"◌"),h("div",{className:"text-xs"},"Reading source…")):
-     file?h("div",{className:"w-full"},
-       h("div",{className:"aspect-video rounded-xl overflow-hidden bg-black border border-white/10"},h("img",{src:file.url,className:"w-full h-full object-contain"})),
-       h("div",{className:"text-[10px] text-zinc-500 mt-2 truncate"},file.name)
-     ):h("div",null,h("div",{className:"text-3xl text-violet-300 mb-2"},"＋"),h("div",{className:"text-xs font-medium"},"Drop image or browse"),h("div",{className:"text-[9px] text-zinc-600 mt-1"},"PNG · JPG · WEBP · HEIC · TIFF · PSD · BMP · SVG"))
-    ),
-    h("div",{className:"mt-6"},
-     h("div",{className:"text-[9px] uppercase tracking-widest text-zinc-600 mb-2"},"02 / Creative Prompt"),
-     h("textarea",{value:prompt,maxLength:500,onChange:e=>setPrompt(e.target.value),rows:4,placeholder:"Describe exactly how you want the video to look and move…",className:"w-full resize-none rounded-xl bg-black/20 border border-white/7 p-3 text-xs leading-5 outline-none focus:border-violet-400/40 placeholder:text-zinc-700"}),
-     h("div",{className:"flex flex-wrap gap-1 mt-2"},["cinematic push-in","slow parallax","dramatic lighting","smooth camera orbit","realistic motion"].map(x=>h("button",{key:x,onClick:()=>setPrompt(p=>p?p+", "+x:x),className:"px-2 py-1 rounded-lg bg-white/[.025] border border-white/5 text-[8px] text-zinc-500 hover:text-violet-200"},"+ ",x)))
-    ),
-    h(ControlSlider,{title:"03 / Motion Dynamics",value:motion,onChange:setMotion}),
-    h("div",{className:"mt-6"},
-     h("div",{className:"text-[9px] uppercase tracking-widest text-zinc-600 mb-2"},"04 / Directional Camera Array"),
-     h("div",{className:"grid grid-cols-2 gap-2"},paths.map(p=>h("button",{key:p[0],onClick:()=>togglePath(p[0]),className:"px-2 py-2.5 rounded-xl border text-[9px] "+(selectedPaths.includes(p[0])?"bg-violet-500/12 border-violet-400/40 text-violet-200":"border-white/5 bg-white/[.02] text-zinc-500")},h("span",{className:"mr-1.5"},p[2]),p[1])))
-    ),
-    h("div",{className:"mt-6"},
-     h("div",{className:"text-[9px] uppercase tracking-widest text-zinc-600 mb-2"},"05 / Premium Style Presets"),
-     h("div",{className:"grid grid-cols-2 gap-2"},presets.map(p=>h("button",{key:p[0],onClick:()=>setPreset(p[0]),className:"text-left p-3 rounded-xl border "+(preset===p[0]?"border-violet-400/45 bg-violet-500/10":"border-white/5 bg-white/[.02]")},h("div",{className:"text-lg text-violet-300"},p[2]),h("div",{className:"text-[10px] font-semibold mt-1"},p[0]),h("div",{className:"text-[8px] text-zinc-600 mt-1"},p[1]))))
-    ),
-    h("div",{className:"mt-6"},
-     h("div",{className:"text-[9px] uppercase tracking-widest text-zinc-600 mb-2"},"06 / Output Duration"),
-     h("div",{className:"card rounded-2xl p-3"},h("div",{className:"text-xs font-medium mb-3"},"Master Sequence Length ",h("span",{className:"float-right text-violet-300 font-mono"},durationLabel)),
-      h("div",{className:"grid grid-cols-3 gap-2"},[["h","HH",23],["m","MM",59],["s","SS",59]].map(x=>h("label",{key:x[0],className:"text-[8px] text-zinc-600"},x[1],h("input",{type:"number",min:0,max:x[2],value:duration[x[0]],onChange:e=>setDuration(d=>Object.assign({},d,{[x[0]]:Math.max(0,Math.min(x[2],+e.target.value||0))})),className:"mt-1 w-full bg-black/25 border border-white/7 rounded-lg p-2 text-center text-xs text-white outline-none"}))))
-     )
-    ),
-    h("div",{className:"mt-6"},
-     h("div",{className:"text-[9px] uppercase tracking-widest text-zinc-600 mb-2"},"07 / Resolution Target"),
-     h("div",{className:"grid grid-cols-3 gap-2"},["HD","4K","8K"].map(r=>h("button",{key:r,onClick:()=>setResolution(r),className:"py-3 rounded-xl border text-xs font-semibold "+(resolution===r?"bg-violet-500/12 border-violet-400/40 text-violet-200":"border-white/5 bg-white/[.02] text-zinc-500")},r)))
-    ),
-    h("button",{onClick:generate,className:"shine w-full mt-6 py-4 rounded-2xl bg-violet-500 hover:bg-violet-400 font-semibold text-sm"},"✦ Generate Video · 1 credit")
-   ),
-   h("section",{className:"p-5 lg:p-8 min-w-0"},
-    h("div",{className:"rounded-3xl border border-white/7 p-6 mb-7 bg-gradient-to-br from-violet-500/[.08] to-white/[.01]"},
-     h("div",{className:"text-[9px] uppercase tracking-[.25em] text-violet-300"},"Generative Motion Intelligence"),
-     h("h1",{className:"text-2xl lg:text-3xl font-semibold mt-2"},"Master Studio"),
-     h("p",{className:"text-xs text-zinc-500 mt-2"},"Prompt the look. Compose the motion. Generate a watchable master."),
-     h("div",{className:"grid sm:grid-cols-4 gap-2 mt-5"},[["01","Analyze"],["02","Animate"],["03","Upscale"],["04","Master"]].map(x=>h("div",{key:x[0],className:"card rounded-xl p-3"},h("div",{className:"text-[8px] text-violet-300 font-mono"},x[0]),h("div",{className:"text-[10px] font-semibold mt-2"},x[1]))))
-    ),
-    h("div",{className:"flex items-center justify-between mb-3"},h("div",{className:"text-[10px] uppercase tracking-widest text-zinc-500"},"Active Queue Manager"),h("div",{className:"text-[9px] text-zinc-700"},queue.length+" active")),
-    queue.length ? h("div",{className:"space-y-2 mb-8"},queue.map(q=>h("div",{key:q.id,className:"card rounded-2xl p-4"},
-      h("div",{className:"flex gap-3"},
-        h("img",{src:q.src,className:"w-16 h-10 object-cover rounded-lg"}),
-        h("div",{className:"flex-1"},
-          h("div",{className:"flex justify-between text-xs"},q.title,h("span",{className:"text-violet-300"},q.progress+"%")),
-          h("div",{className:"text-[9px] text-zinc-600 mt-1"},q.step),
-          h("div",{className:"h-1.5 rounded-full bg-zinc-800 mt-2 overflow-hidden"},h("div",{className:"h-full bg-violet-500 transition-all",style:{width:q.progress+"%"}}))
-        )
-      )
-    ))) : h("div",{className:"card rounded-2xl p-6 mb-8 text-xs text-zinc-600"},"No active renders. Your next generation will appear here."),
-    h("div",{className:"flex items-end justify-between mb-4"},h("div",null,h("div",{className:"text-[10px] uppercase tracking-widest text-zinc-500"},"Master Video Gallery"),h("div",{className:"text-xs text-zinc-700 mt-1"},"Preview, play and export your generated masters."))),
-    h("div",{className:"grid sm:grid-cols-2 xl:grid-cols-3 gap-4"},gallery.map(item=>h(GalleryCard,{key:item.id,item,onExport:()=>{setExportItem(item);setExportFormat("webm")}})))
-   )
-  ),
-  exportItem&&h(ExportModal,{item:exportItem,format:exportFormat,setFormat:setExportFormat,quality:exportQuality,setQuality:setExportQuality,onClose:()=>setExportItem(null),onExport:exportNow}),
-  toast&&h("div",{className:"fixed bottom-5 right-5 z-50 card rounded-xl px-4 py-3 text-xs shadow-2xl"},toast)
- )
-}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-function ControlSlider({title,value,onChange}){
- return h("div",{className:"mt-6"},h("div",{className:"text-[9px] uppercase tracking-widest text-zinc-600 mb-3"},title),
-  h("div",{className:"card rounded-2xl p-4"},h("div",{className:"flex justify-between text-xs mb-3"},h("span",{className:"text-zinc-400"},"Intensity"),h("b",{className:"text-violet-300"},value+" / 100")),
-  h("input",{className:"range",type:"range",min:1,max:100,value,style:{"--v":value+"%"},onChange:e=>onChange(+e.target.value)}))
- )
-}
+    html {
+      scroll-behavior: smooth;
+    }
 
-function GalleryCard({item,onExport}){
- const ref=useRef(null),[play,setPlay]=useState(false);
- function start(){
-  if(item.isVideo&&item.src&&ref.current){ref.current.play().catch(()=>{});setPlay(true)}
- }
- function stop(){
-  if(item.isVideo&&ref.current){ref.current.pause();ref.current.currentTime=0;setPlay(false)}
- }
- return h("article",{className:"card rounded-2xl overflow-hidden hover:border-violet-400/30 transition"},
-  h("div",{className:"relative aspect-video bg-black"},
-   item.isVideo&&item.src?h("video",{ref,src:item.src,muted:true,loop:true,playsInline:true,className:"w-full h-full object-cover",onMouseEnter:start,onMouseLeave:stop}):
-   item.src?h("img",{src:item.src,alt:item.title,className:"w-full h-full object-cover"}):
-   h("div",{className:"w-full h-full flex items-center justify-center bg-gradient-to-br from-violet-950/60 via-zinc-950 to-black"},h("div",{className:"text-center"},h("div",{className:"text-4xl text-violet-300"},"✦"),h("div",{className:"text-[9px] text-zinc-600 mt-2"},"MASTER PREVIEW"))),
-   h("div",{className:"absolute top-3 left-3 px-2 py-1 rounded-md bg-black/65 text-[8px] uppercase"},item.resolution),
-   h("div",{className:"absolute bottom-3 left-3 right-3 flex justify-between items-end"},h("div",null,h("div",{className:"text-xs font-semibold"},item.title),h("div",{className:"text-[9px] text-zinc-400 mt-1"},item.preset+" · "+fmtTime(item.duration))),h("div",{className:"w-8 h-8 rounded-full bg-black/60 border border-white/10 flex items-center justify-center"},play?"❚❚":"▶"))
-  ),
-  h("div",{className:"p-3"},h("div",{className:"text-[8px] text-zinc-700 truncate mb-2"},item.prompt||"AI motion master"),
-   h("button",{onClick:onExport,className:"w-full py-2.5 rounded-lg bg-white/[.05] hover:bg-violet-500/15 border border-white/5 text-[10px] font-semibold"},"↓ Export Asset"))
- )
-}
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(
+          circle at 50% -10%,
+          rgba(139,92,246,.13),
+          transparent 35%
+        ),
+        radial-gradient(
+          circle at 100% 55%,
+          rgba(91,140,255,.08),
+          transparent 30%
+        ),
+        var(--bg);
 
-function ExportModal({item,format,setFormat,quality,setQuality,onClose,onExport}){
- return h("div",{className:"fixed inset-0 z-50 modal flex items-center justify-center p-4",onClick:onClose},
-  h("div",{className:"w-full max-w-xl rounded-3xl bg-[#101117] border border-white/10 overflow-hidden",onClick:e=>e.stopPropagation()},
-   h("div",{className:"p-5 border-b border-white/5 flex justify-between"},h("div",null,h("div",{className:"font-semibold text-sm"},"Export Asset"),h("div",{className:"text-[9px] text-zinc-600 mt-1"},item.title+" · "+fmtTime(item.duration))),h("button",{onClick:onClose},"×")),
-   h("div",{className:"p-5"},
-    h("div",{className:"text-[9px] uppercase tracking-widest text-zinc-600 mb-2"},"Format"),
-    h("div",{className:"grid sm:grid-cols-2 gap-2"},formats.map(f=>h("button",{key:f.id,onClick:()=>setFormat(f.id),className:"text-left p-3 rounded-xl border "+(format===f.id?"border-violet-400/40 bg-violet-500/10":"border-white/5 bg-white/[.02]")},h("div",{className:"text-xs font-semibold"},f.name),h("div",{className:"text-[8px] text-zinc-600 mt-1"},f.detail)))),
-    h("div",{className:"text-[9px] uppercase tracking-widest text-zinc-600 mt-5 mb-2"},"Quality"),
-    h("div",{className:"grid grid-cols-3 gap-2"},["Standard","High","Extreme"].map(q=>h("button",{key:q,onClick:()=>setQuality(q),className:"py-3 rounded-xl border text-[9px] "+(quality===q?"border-violet-400/40 bg-violet-500/10":"border-white/5")},q))),
-    h("div",{className:"card rounded-xl p-3 mt-5 text-[9px] text-zinc-500"},format==="webm"?"WebM is encoded natively when this browser supports it; otherwise the app uses the FFmpeg transcoder.":"This format is created by genuine FFmpeg transcoding; the app never fakes a container by changing a file extension."),
-    h("div",{className:"text-[8px] text-zinc-700 mt-3 text-center"},"MP4 / HEVC / ProRes / MKV / AVI require the /api/transcode FFmpeg endpoint. WebM works entirely in-browser."),
-    h("button",{onClick:onExport,className:"w-full mt-4 py-3.5 rounded-xl bg-violet-500 hover:bg-violet-400 text-sm font-semibold"},"Download Watchable Video")
-   )
-  )
- )
-}
-ReactDOM.createRoot(document.getElementById("root")).render(h(App));
-})();
-</script>
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+      overflow-x: hidden;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font-family: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    ::selection {
+      background: rgba(139,92,246,.35);
+    }
+
+    /* =========================================================
+       AMBIENT BACKGROUND
+       ========================================================= */
+
+    .ambient {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 999px;
+      filter: blur(110px);
+      opacity: .4;
+      animation: drift 12s ease-in-out infinite alternate;
+    }
+
+    .orb.one {
+      width: 600px;
+      height: 600px;
+      left: -280px;
+      top: 20%;
+      background: rgba(139,92,246,.10);
+    }
+
+    .orb.two {
+      width: 550px;
+      height: 550px;
+      right: -220px;
+      top: 38%;
+      background: rgba(45,115,255,.10);
+      animation-delay: -3s;
+    }
+
+    .orb.three {
+      width: 500px;
+      height: 500px;
+      left: 35%;
+      bottom: -300px;
+      background: rgba(191,64,255,.08);
+      animation-delay: -6s;
+    }
+
+    @keyframes drift {
+      from {
+        transform: translate3d(0,0,0) scale(1);
+      }
+      to {
+        transform: translate3d(25px,-20px,0) scale(1.08);
+      }
+    }
+
+    /* =========================================================
+       GRID TEXTURE
+       ========================================================= */
+
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .35;
+      background-image:
+        linear-gradient(
+          rgba(255,255,255,.022) 1px,
+          transparent 1px
+        ),
+        linear-gradient(
+          90deg,
+          rgba(255,255,255,.022) 1px,
+          transparent 1px
+        );
+      background-size: 48px 48px;
+
+      mask-image: linear-gradient(
+        to bottom,
+        black,
+        transparent 75%
+      );
+
+      z-index: 0;
+    }
+
+    /* =========================================================
+       NAVIGATION
+       ========================================================= */
+
+    .navbar {
+      position: relative;
+      z-index: 10;
+
+      width: min(1200px, calc(100% - 40px));
+      margin: auto;
+
+      height: 76px;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -.04em;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 12px;
+
+      background:
+        linear-gradient(
+          135deg,
+          var(--violet),
+          var(--blue)
+        );
+
+      box-shadow:
+        0 0 30px rgba(139,92,246,.25);
+    }
+
+    .brand-ai {
+      color: var(--violet-2);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .nav-links a {
+      transition: .2s;
+    }
+
+    .nav-links a:hover {
+      color: white;
+    }
+
+    .nav-button {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+
+      padding: 10px 15px;
+
+      border-radius: 12px;
+
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.035);
+
+      color: white;
+
+      font-size: 12px;
+      font-weight: 600;
+
+      transition: .25s;
+    }
+
+    .nav-button:hover {
+      background: rgba(255,255,255,.08);
+      transform: translateY(-1px);
+    }
+
+    .mobile-menu {
+      display: none;
+
+      width: 42px;
+      height: 42px;
+
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color: white;
+
+      border-radius: 12px;
+    }
+
+    /* =========================================================
+       HERO
+       ========================================================= */
+
+    .hero {
+      position: relative;
+      z-index: 5;
+
+      width: min(1200px, calc(100% - 40px));
+      margin: auto;
+
+      padding:
+        100px 0
+        75px;
+    }
+
+    .hero-content {
+      max-width: 850px;
+      margin: auto;
+      text-align: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+
+      padding: 8px 13px;
+
+      border: 1px solid rgba(139,92,246,.18);
+      background: rgba(139,92,246,.06);
+
+      color: #d7c7ff;
+
+      border-radius: 999px;
+
+      font-size: 11px;
+      font-weight: 600;
+
+      margin-bottom: 25px;
+
+      animation: appear .7s ease both;
+    }
+
+    .eyebrow i {
+      color: var(--violet-2);
+    }
+
+    .hero h1 {
+      font-size: clamp(44px, 7vw, 78px);
+
+      line-height: .98;
+
+      letter-spacing: -.065em;
+
+      font-weight: 800;
+
+      animation:
+        appear .8s .08s ease both;
+    }
+
+    .gradient-text {
+      background:
+        linear-gradient(
+          90deg,
+          #fff 0%,
+          #ddd3ff 45%,
+          #9fb9ff 100%
+        );
+
+      -webkit-background-clip: text;
+      background-clip: text;
+
+      color: transparent;
+    }
+
+    .hero-description {
+      max-width: 650px;
+
+      margin: 25px auto 0;
+
+      color: var(--muted);
+
+      font-size: 16px;
+      line-height: 1.75;
+
+      animation:
+        appear .8s .16s ease both;
+    }
+
+    @keyframes appear {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* =========================================================
+       GENERATOR
+       ========================================================= */
+
+    .generator {
+      max-width: 850px;
+
+      margin: 48px auto 0;
+
+      animation:
+        appear .8s .25s ease both;
+    }
+
+    .prompt-shell {
+      position: relative;
+
+      padding: 1px;
+
+      border-radius: 29px;
+
+      background:
+        linear-gradient(
+          100deg,
+          rgba(139,92,246,.5),
+          rgba(91,140,255,.22),
+          rgba(139,92,246,.45)
+        );
+
+      box-shadow: var(--shadow-glow);
+    }
+
+    .prompt-card {
+      position: relative;
+
+      border-radius: 28px;
+
+      padding: 12px;
+
+      background:
+        rgba(16,16,21,.78);
+
+      border: 1px solid rgba(255,255,255,.06);
+
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+    }
+
+    .prompt-textarea {
+      display: block;
+
+      width: 100%;
+      min-height: 150px;
+
+      padding:
+        12px
+        12px
+        75px;
+
+      border: 0;
+      outline: none;
+
+      resize: none;
+
+      background: transparent;
+
+      color: white;
+
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .prompt-textarea::placeholder {
+      color: rgba(255,255,255,.25);
+      transition: opacity .3s;
+    }
+
+    .prompt-actions {
+      position: absolute;
+
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      gap: 10px;
+    }
+
+    /* Magic Prompt */
+
+    .magic-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      padding: 8px 11px;
+
+      border-radius: 11px;
+
+      border: 1px solid rgba(139,92,246,.22);
+
+      background:
+        rgba(139,92,246,.09);
+
+      color: #d9ccff;
+
+      font-size: 11px;
+      font-weight: 600;
+
+      transition: .25s;
+    }
+
+    .magic-button:hover {
+      background:
+        rgba(139,92,246,.15);
+    }
+
+    .magic-button.off {
+      border-color: var(--border);
+      background: rgba(255,255,255,.035);
+      color: var(--muted);
+    }
+
+    .switch {
+      width: 30px;
+      height: 17px;
+
+      padding: 2px;
+
+      border: 0;
+      border-radius: 999px;
+
+      background: rgba(255,255,255,.13);
+    }
+
+    .switch span {
+      display: block;
+
+      width: 13px;
+      height: 13px;
+
+      border-radius: 50%;
+
+      background: white;
+
+      transition: .25s;
+    }
+
+    .switch.active {
+      background: var(--violet);
+    }
+
+    .switch.active span {
+      transform: translateX(13px);
+    }
+
+    /* Generate */
+
+    .generate-button {
+      position: relative;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+
+      min-height: 42px;
+
+      padding: 0 17px;
+
+      overflow: hidden;
+
+      border: 0;
+      border-radius: 12px;
+
+      background:
+        linear-gradient(
+          100deg,
+          #7c3aed,
+          #6366f1,
+          #4f8cff
+        );
+
+      color: white;
+
+      font-size: 12px;
+      font-weight: 700;
+
+      box-shadow:
+        0 10px 35px rgba(99,102,241,.22);
+
+      transition:
+        transform .2s,
+        box-shadow .2s;
+    }
+
+    .generate-button::after {
+      content: "";
+
+      position: absolute;
+
+      inset: 0;
+
+      background:
+        linear-gradient(
+          110deg,
+          transparent 25%,
+          rgba(255,255,255,.35) 45%,
+          transparent 65%
+        );
+
+      transform: translateX(-100%);
+
+      transition: transform .7s;
+    }
+
+    .generate-button:hover::after {
+      transform: translateX(100%);
+    }
+
+    .generate-button:hover {
+      transform: translateY(-2px);
+
+      box-shadow:
+        0 15px 45px rgba(99,102,241,.35);
+    }
+
+    .generate-button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* =========================================================
+       STYLE PILLS
+       ========================================================= */
+
+    .style-pills {
+      display: flex;
+
+      flex-wrap: wrap;
+
+      justify-content: center;
+
+      gap: 8px;
+
+      margin-top: 17px;
+    }
+
+    .style-pill {
+      padding: 9px 13px;
+
+      border-radius: 999px;
+
+      border: 1px solid var(--border);
+
+      background:
+        rgba(255,255,255,.025);
+
+      color: rgba(255,255,255,.46);
+
+      font-size: 11px;
+      font-weight: 500;
+
+      transition: .2s;
+    }
+
+    .style-pill:hover {
+      color: white;
+
+      background:
+        rgba(255,255,255,.055);
+    }
+
+    .style-pill.active {
+      color: #ded4ff;
+
+      border-color:
+        rgba(139,92,246,.28);
+
+      background:
+        rgba(139,92,246,.10);
+    }
+
+    /* =========================================================
+       CONTROL PANEL
+       ========================================================= */
+
+    .controls {
+      display: grid;
+
+      grid-template-columns:
+        1.2fr
+        .8fr
+        .8fr;
+
+      gap: 14px;
+
+      margin-top: 25px;
+
+      padding: 17px;
+
+      border:
+        1px solid var(--border);
+
+      border-radius: 19px;
+
+      background:
+        rgba(18,18,24,.57);
+
+      backdrop-filter: blur(25px);
+    }
+
+    .control-label {
+      margin-bottom: 8px;
+
+      color: var(--muted-2);
+
+      text-transform: uppercase;
+
+      letter-spacing: .15em;
+
+      font-size: 9px;
+      font-weight: 700;
+    }
+
+    .ratio-group {
+      display: grid;
+
+      grid-template-columns:
+        repeat(3,1fr);
+
+      gap: 5px;
+    }
+
+    .ratio {
+      padding: 9px 5px;
+
+      border: 0;
+
+      border-radius: 8px;
+
+      background:
+        rgba(255,255,255,.04);
+
+      color: var(--muted);
+
+      font-size: 10px;
+    }
+
+    .ratio.active {
+      background: white;
+      color: #09090b;
+      font-weight: 700;
+    }
+
+    .select-wrapper {
+      position: relative;
+    }
+
+    .select-wrapper select {
+      width: 100%;
+
+      appearance: none;
+
+      padding:
+        9px 30px
+        9px 10px;
+
+      border:
+        1px solid rgba(255,255,255,.07);
+
+      border-radius: 8px;
+
+      outline: none;
+
+      background:
+        rgba(255,255,255,.04);
+
+      color: rgba(255,255,255,.7);
+
+      font-size: 10px;
+    }
+
+    .select-wrapper i {
+      position: absolute;
+
+      right: 9px;
+      top: 50%;
+
+      transform: translateY(-50%);
+
+      pointer-events: none;
+
+      color: rgba(255,255,255,.3);
+    }
+
+    /* =========================================================
+       GENERATION PANEL
+       ========================================================= */
+
+    .generation-container {
+      display: none;
+
+      max-width: 850px;
+
+      margin: 30px auto 0;
+    }
+
+    .generation-container.visible {
+      display: block;
+
+      animation:
+        appear .5s ease both;
+    }
+
+    .generation-card {
+      overflow: hidden;
+
+      padding: 20px;
+
+      border:
+        1px solid var(--border);
+
+      border-radius: 24px;
+
+      background:
+        rgba(18,18,24,.65);
+
+      backdrop-filter: blur(24px);
+    }
+
+    .generation-header {
+      display: flex;
+
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .generation-title {
+      display: flex;
+
+      align-items: center;
+
+      gap: 12px;
+    }
+
+    .generation-icon {
+      width: 40px;
+      height: 40px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 12px;
+
+      background:
+        rgba(139,92,246,.1);
+
+      color: var(--violet-2);
+    }
+
+    .generation-title strong {
+      display: block;
+
+      font-size: 12px;
+    }
+
+    .generation-title small {
+      display: block;
+
+      margin-top: 4px;
+
+      color: var(--muted-2);
+
+      font-size: 10px;
+    }
+
+    .progress-percent {
+      color: #d8ccff;
+
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .progress {
+      height: 5px;
+
+      margin-top: 18px;
+
+      overflow: hidden;
+
+      border-radius: 999px;
+
+      background:
+        rgba(255,255,255,.06);
+    }
+
+    .progress-bar {
+      width: 0;
+      height: 100%;
+
+      border-radius: inherit;
+
+      background:
+        linear-gradient(
+          90deg,
+          var(--violet),
+          var(--blue)
+        );
+
+      transition:
+        width .45s ease;
+    }
+
+    .preview-skeleton {
+      position: relative;
+
+      display: grid;
+      place-items: center;
+
+      aspect-ratio: 16 / 7;
+
+      margin-top: 17px;
+
+      overflow: hidden;
+
+      border-radius: 18px;
+
+      background:
+        linear-gradient(
+          110deg,
+          rgba(255,255,255,.025),
+          rgba(255,255,255,.055),
+          rgba(255,255,255,.025)
+        );
+
+      background-size: 200% 100%;
+
+      animation:
+        skeleton 2s linear infinite;
+    }
+
+    @keyframes skeleton {
+      to {
+        background-position: -200% 0;
+      }
+    }
+
+    .preview-skeleton-content {
+      text-align: center;
+
+      color: rgba(255,255,255,.2);
+    }
+
+    .preview-skeleton-content i {
+      width: 32px;
+      height: 32px;
+
+      margin-bottom: 8px;
+    }
+
+    .preview-skeleton-content p {
+      font-size: 10px;
+    }
+
+    /* =========================================================
+       SHOWCASE
+       ========================================================= */
+
+    .showcase {
+      position: relative;
+
+      z-index: 5;
+
+      width:
+        min(1200px, calc(100% - 40px));
+
+      margin: auto;
+
+      padding:
+        50px 0 100px;
+    }
+
+    .section-heading {
+      display: flex;
+
+      align-items: end;
+      justify-content: space-between;
+
+      margin-bottom: 28px;
+    }
+
+    .section-eyebrow {
+      margin-bottom: 8px;
+
+      color:
+        rgba(167,139,250,.7);
+
+      font-size: 9px;
+
+      font-weight: 700;
+
+      letter-spacing: .2em;
+
+      text-transform: uppercase;
+    }
+
+    .section-heading h2 {
+      font-size: 27px;
+
+      letter-spacing: -.04em;
+    }
+
+    .section-note {
+      color: var(--muted-2);
+
+      font-size: 10px;
+    }
+
+    .masonry {
+      columns: 3 260px;
+
+      column-gap: 15px;
+    }
+
+    .avatar-card {
+      position: relative;
+
+      display: inline-block;
+
+      width: 100%;
+
+      margin:
+        0 0 15px;
+
+      overflow: hidden;
+
+      break-inside: avoid;
+
+      border-radius: 17px;
+
+      border:
+        1px solid var(--border);
+
+      background:
+        rgba(255,255,255,.025);
+
+      cursor: pointer;
+    }
+
+    .avatar-card img {
+      display: block;
+
+      width: 100%;
+
+      height: auto;
+
+      transition:
+        transform .7s ease;
+    }
+
+    .avatar-card:hover img {
+      transform: scale(1.045);
+    }
+
+    .avatar-overlay {
+      position: absolute;
+
+      inset: 0;
+
+      display: flex;
+
+      flex-direction: column;
+
+      justify-content: end;
+
+      padding: 18px;
+
+      background:
+        linear-gradient(
+          to top,
+          rgba(0,0,0,.95),
+          rgba(0,0,0,.6) 35%,
+          transparent 70%
+        );
+
+      opacity: 0;
+
+      transform: translateY(8px);
+
+      transition:
+        opacity .3s,
+        transform .3s;
+    }
+
+    .avatar-card:hover .avatar-overlay {
+      opacity: 1;
+
+      transform: translateY(0);
+    }
+
+    .avatar-name {
+      margin-bottom: 7px;
+
+      color: #ded4ff;
+
+      font-size: 11px;
+
+      font-weight: 700;
+    }
+
+    .avatar-prompt {
+      display: -webkit-box;
+
+      overflow: hidden;
+
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+
+      color:
+        rgba(255,255,255,.68);
+
+      font-size: 10px;
+
+      line-height: 1.6;
+    }
+
+    .avatar-actions {
+      display: flex;
+
+      gap: 7px;
+
+      margin-top: 12px;
+    }
+
+    .small-button {
+      display: inline-flex;
+
+      align-items: center;
+
+      gap: 5px;
+
+      padding: 8px 10px;
+
+      border-radius: 8px;
+
+      border: 1px solid rgba(255,255,255,.12);
+
+      background:
+        rgba(255,255,255,.9);
+
+      color: #111;
+
+      font-size: 9px;
+
+      font-weight: 700;
+    }
+
+    .small-button.secondary {
+      background:
+        rgba(0,0,0,.35);
+
+      color: white;
+    }
+
+    /* =========================================================
+       FOOTER
+       ========================================================= */
+
+    footer {
+      position: relative;
+
+      z-index: 5;
+
+      border-top:
+        1px solid rgba(255,255,255,.055);
+    }
+
+    .footer-inner {
+      width:
+        min(1200px, calc(100% - 40px));
+
+      margin: auto;
+
+      padding: 28px 0;
+
+      display: flex;
+
+      align-items: center;
+      justify-content: space-between;
+
+      color:
+        rgba(255,255,255,.28);
+
+      font-size: 10px;
+    }
+
+    .api-ready {
+      display: flex;
+
+      align-items: center;
+
+      gap: 7px;
+    }
+
+    /* =========================================================
+       MODAL
+       ========================================================= */
+
+    .modal {
+      position: fixed;
+
+      inset: 0;
+
+      z-index: 100;
+
+      display: none;
+
+      align-items: center;
+      justify-content: center;
+
+      padding: 20px;
+
+      background:
+        rgba(0,0,0,.78);
+
+      backdrop-filter:
+        blur(18px);
+    }
+
+    .modal.visible {
+      display: flex;
+
+      animation:
+        fadeIn .25s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-content {
+      position: relative;
+
+      width: min(1050px, 100%);
+
+      max-height: 92vh;
+
+      overflow: auto;
+
+      padding: 15px;
+
+      border:
+        1px solid rgba(255,255,255,.1);
+
+      border-radius: 27px;
+
+      background:
+        rgba(17,17,22,.88);
+
+      backdrop-filter:
+        blur(35px);
+
+      box-shadow:
+        0 40px 100px rgba(0,0,0,.55);
+    }
+
+    .modal-top {
+      display: flex;
+
+      align-items: center;
+      justify-content: space-between;
+
+      padding: 4px 4px 12px;
+    }
+
+    .modal-name {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .modal-subtitle {
+      margin-top: 4px;
+
+      color: var(--muted-2);
+
+      font-size: 9px;
+    }
+
+    .close-modal {
+      width: 36px;
+      height: 36px;
+
+      display: grid;
+      place-items: center;
+
+      border: 0;
+
+      border-radius: 10px;
+
+      background:
+        rgba(255,255,255,.05);
+
+      color: white;
+    }
+
+    .modal-grid {
+      display: grid;
+
+      grid-template-columns:
+        1.25fr
+        .75fr;
+
+      gap: 14px;
+    }
+
+    .modal-image {
+      overflow: hidden;
+
+      display: grid;
+      place-items: center;
+
+      min-height: 400px;
+
+      border-radius: 18px;
+
+      background: #050506;
+    }
+
+    .modal-image img {
+      display: block;
+
+      width: 100%;
+      height: 100%;
+
+      max-height: 70vh;
+
+      object-fit: contain;
+    }
+
+    .modal-details {
+      display: flex;
+
+      flex-direction: column;
+
+      padding: 20px;
+
+      border:
+        1px solid var(--border);
+
+      border-radius: 18px;
+
+      background:
+        rgba(255,255,255,.025);
+    }
+
+    .modal-label {
+      color: var(--muted-2);
+
+      font-size: 9px;
+
+      font-weight: 700;
+
+      letter-spacing: .18em;
+
+      text-transform: uppercase;
+    }
+
+    .modal-prompt {
+      margin-top: 13px;
+
+      color:
+        rgba(255,255,255,.68);
+
+      font-size: 11px;
+
+      line-height: 1.75;
+    }
+
+    .modal-buttons {
+      display: grid;
+
+      gap: 8px;
+
+      margin-top: auto;
+
+      padding-top: 30px;
+    }
+
+    .modal-button {
+      min-height: 40px;
+
+      display: flex;
+
+      align-items: center;
+      justify-content: center;
+
+      gap: 8px;
+
+      border-radius: 10px;
+
+      border:
+        1px solid var(--border);
+
+      background:
+        rgba(255,255,255,.04);
+
+      color: white;
+
+      font-size: 10px;
+
+      font-weight: 600;
+
+      transition: .2s;
+    }
+
+    .modal-button:hover {
+      background:
+        rgba(255,255,255,.08);
+    }
+
+    .modal-button.primary {
+      border: 0;
+
+      background:
+        linear-gradient(
+          100deg,
+          var(--violet),
+          var(--blue)
+        );
+    }
+
+    /* =========================================================
+       TOAST
+       ========================================================= */
+
+    .toast {
+      position: fixed;
+
+      right: 20px;
+      bottom: 20px;
+
+      z-index: 200;
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 8px;
+
+      padding: 12px 15px;
+
+      border:
+        1px solid rgba(255,255,255,.1);
+
+      border-radius: 12px;
+
+      background:
+        rgba(20,20,25,.9);
+
+      backdrop-filter: blur(20px);
+
+      color: white;
+
+      font-size: 10px;
+
+      box-shadow:
+        0 15px 45px rgba(0,0,0,.35);
+
+      transform:
+        translateY(20px);
+
+      opacity: 0;
+
+      pointer-events: none;
+
+      transition: .3s;
+    }
+
+    .toast.show {
+      transform:
+        translateY(0);
+
+      opacity: 1;
+    }
+
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+
+    @media (max-width: 850px) {
+
+      .nav-links,
+      .nav-button {
+        display: none;
+      }
+
+      .mobile-menu {
+        display: grid;
+        place-items: center;
+      }
+
+      .hero {
+        padding-top: 70px;
+      }
+
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      .modal-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .modal-image {
+        min-height: 300px;
+      }
+    }
+
+    @media (max-width: 600px) {
+
+      .navbar,
+      .hero,
+      .showcase,
+      .footer-inner {
+        width: min(100% - 26px, 1200px);
+      }
+
+      .hero {
+        padding:
+          55px 0
+          45px;
+      }
+
+      .hero h1 {
+        font-size: 44px;
+      }
+
+      .hero-description {
+        font-size: 13px;
+      }
+
+      .prompt-textarea {
+        min-height: 175px;
+        font-size: 14px;
+      }
+
+      .prompt-actions {
+        align-items: flex-end;
+      }
+
+      .magic-button {
+        font-size: 9px;
+      }
+
+      .generate-button {
+        padding: 0 13px;
+        font-size: 10px;
+      }
+
+      .section-heading {
+        display: block;
+      }
+
+      .section-note {
+        display: block;
+        margin-top: 7px;
+      }
+
+      .masonry {
+        columns: 1;
+      }
+
+      .footer-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Ambient background -->
+  <div class="ambient">
+    <div class="orb one"></div>
+    <div class="orb two"></div>
+    <div class="orb three"></div>
+  </div>
+
+  <div class="grid-bg"></div>
+
+  <!-- ========================================================
+       NAVIGATION
+       ======================================================== -->
+
+  <nav class="navbar">
+
+    <a href="#" class="brand">
+      <span class="brand-icon">
+        <i data-lucide="sparkles" width="18"></i>
+      </span>
+
+      <span>
+        Persona<span class="brand-ai">AI</span>
+      </span>
+    </a>
+
+    <div class="nav-links">
+      <a href="#create">Create</a>
+      <a href="#showcase">Showcase</a>
+      <a href="#api">API Ready</a>
+    </div>
+
+    <button class="nav-button">
+      My Creations
+      <i data-lucide="arrow-up-right" width="14"></i>
+    </button>
+
+    <button class="mobile-menu" onclick="toggleMobileMenu()">
+      <i data-lucide="menu" width="18"></i>
+    </button>
+
+  </nav>
+
+  <!-- ========================================================
+       HERO / GENERATOR
+       ======================================================== -->
+
+  <section class="hero" id="create">
+
+    <div class="hero-content">
+
+      <div class="eyebrow">
+        <i data-lucide="zap" width="13"></i>
+        Next-generation human synthesis
+      </div>
+
+      <h1>
+        Generate
+        <span class="gradient-text">
+          Photorealistic
+        </span>
+        Humans in One Click
+      </h1>
+
+      <p class="hero-description">
+        Describe the person you imagine.
+        PersonaAI turns a single prompt into
+        a cinematic, hyper-real human portrait.
+      </p>
+
+    </div>
+
+    <!-- Generator -->
+    <div class="generator">
+
+      <div class="prompt-shell">
+
+        <div class="prompt-card">
+
+          <textarea
+            id="prompt"
+            class="prompt-textarea"
+            placeholder="30-year-old Japanese architect in a rain-slicked street, 85mm portrait..."
+            aria-label="Avatar prompt"
+          ></textarea>
+
+          <div class="prompt-actions">
+
+            <!-- Magic Prompt -->
+            <button
+              id="magicButton"
+              class="magic-button"
+              onclick="toggleMagic()"
+            >
+
+              <i data-lucide="wand-sparkles" width="14"></i>
+
+              <span>
+                Magic Prompt
+              </span>
+
+              <span
+                id="magicSwitch"
+                class="switch active"
+              >
+                <span></span>
+              </span>
+
+            </button>
+
+            <!-- Generate -->
+            <button
+              id="generateButton"
+              class="generate-button"
+              onclick="generateAvatar()"
+            >
+
+              <i data-lucide="sparkles" width="15"></i>
+
+              <span>
+                Generate Avatar
+              </span>
+
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Style pills -->
+      <div class="style-pills">
+
+        <button class="style-pill active">
+          Studio Portrait
+        </button>
+
+        <button class="style-pill">
+          Cinematic Street
+        </button>
+
+        <button class="style-pill">
+          Editorial Fashion
+        </button>
+
+        <button class="style-pill">
+          Raw Photography
+        </button>
+
+        <button class="style-pill">
+          Vintage Film
+        </button>
+
+      </div>
+
+      <!-- Controls -->
+      <div class="controls">
+
+        <div>
+
+          <div class="control-label">
+            Aspect Ratio
+          </div>
+
+          <div class="ratio-group">
+
+            <button
+              class="ratio active"
+              data-ratio="1:1"
+            >
+              1:1
+            </button>
+
+            <button
+              class="ratio"
+              data-ratio="9:16"
+            >
+              9:16
+            </button>
+
+            <button
+              class="ratio"
+              data-ratio="16:9"
+            >
+              16:9
+            </button>
+
+          </div>
+
+        </div>
+
+        <div>
+
+          <div class="control-label">
+            Gender
+          </div>
+
+          <div class="select-wrapper">
+
+            <select id="gender">
+              <option>Any</option>
+              <option>Female</option>
+              <option>Male</option>
+              <option>Androgynous</option>
+            </select>
+
+            <i data-lucide="chevron-down" width="13"></i>
+
+          </div>
+
+        </div>
+
+        <div>
+
+          <div class="control-label">
+            Ethnicity
+          </div>
+
+          <div class="select-wrapper">
+
+            <select id="ethnicity">
+              <option>Any</option>
+              <option>East Asian</option>
+              <option>South Asian</option>
+              <option>Black</option>
+              <option>Latino</option>
+              <option>Middle Eastern</option>
+              <option>European</option>
+              <option>Mixed</option>
+            </select>
+
+            <i data-lucide="chevron-down" width="13"></i>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ======================================================
+         GENERATION STATUS
+         ====================================================== -->
+
+    <div
+      id="generationContainer"
+      class="generation-container"
+    >
+
+      <div class="generation-card">
+
+        <div class="generation-header">
+
+          <div class="generation-title">
+
+            <div class="generation-icon">
+              <i
+                id="generationIcon"
+                data-lucide="loader-circle"
+                width="19"
+              ></i>
+            </div>
+
+            <div>
+
+              <strong>
+                Creating your avatar
+              </strong>
+
+              <small id="generationStatus">
+                Preparing your portrait...
+              </small>
+
+            </div>
+
+          </div>
+
+          <div
+            id="progressPercent"
+            class="progress-percent"
+          >
+            0%
+          </div>
+
+        </div>
+
+        <div class="progress">
+
+          <div
+            id="progressBar"
+            class="progress-bar"
+          ></div>
+
+        </div>
+
+        <div class="preview-skeleton">
+
+          <div class="preview-skeleton-content">
+
+            <i data-lucide="image"></i>
+
+            <p>
+              Live canvas preview
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- ========================================================
+       COMMUNITY SHOWCASE
+       ======================================================== -->
+
+  <section
+    class="showcase"
+    id="showcase"
+  >
+
+    <div class="section-heading">
+
+      <div>
+
+        <div class="section-eyebrow">
+          Community Showcase
+        </div>
+
+        <h2>
+          Made with PersonaAI
+        </h2>
+
+      </div>
+
+      <div class="section-note">
+        Hover any avatar to inspect & remix
+      </div>
+
+    </div>
+
+    <div class="masonry" id="masonry">
+
+      <!-- Avatar 1 -->
+      <article
+        class="avatar-card"
+        data-name="Tokyo Architect"
+        data-prompt="30-year-old Japanese architect in a rain-slicked Tokyo street, 85mm portrait, natural skin texture, cinematic night lighting."
+        data-image="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=92"
+      >
+
+        <img
+          src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=92"
+          alt="Tokyo Architect"
+          loading="lazy"
+        >
+
+        <div class="avatar-overlay">
+
+          <div class="avatar-name">
+            Tokyo Architect
+          </div>
+
+          <div class="avatar-prompt">
+            30-year-old Japanese architect in a rain-slicked Tokyo street, 85mm portrait, natural skin texture, cinematic night lighting.
+          </div>
+
+          <div class="avatar-actions">
+
+            <button
+              class="small-button"
+              onclick="remixCard(this)"
+            >
+              <i data-lucide="refresh-cw" width="12"></i>
+              Remix This Avatar
+            </button>
+
+            <button
+              class="small-button secondary"
+              onclick="openAvatar(this)"
+            >
+              View
+            </button>
+
+          </div>
+
+        </div>
+
+      </article>
+
+      <!-- Avatar 2 -->
+      <article
+        class="avatar-card"
+        data-name="Golden Hour Editorial"
+        data-prompt="Confident editorial fashion portrait, warm golden-hour rim light, subtle film grain, authentic skin detail."
+        data-image="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=92"
+      >
+
+        <img
+          src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=92"
+          alt="Golden Hour Editorial"
+          loading="lazy"
+        >
+
+        <div class="avatar-overlay">
+
+          <div class="avatar-name">
+            Golden Hour Editorial
+          </div>
+
+          <div class="avatar-prompt">
+            Confident editorial fashion portrait, warm golden-hour rim light, subtle film grain, authentic skin detail.
+          </div>
+
+          <div class="avatar-actions">
+
+            <button
+              class="small-button"
+              onclick="remixCard(this)"
+            >
+              <i data-lucide="refresh-cw" width="12"></i>
+              Remix This Avatar
+            </button>
+
+            <button
+              class="small-button secondary"
+              onclick="openAvatar(this)"
+            >
+              View
+            </button>
+
+          </div>
+
+        </div>
+
+      </article>
+
+      <!-- Avatar 3 -->
+      <article
+        class="avatar-card"
+        data-name="Cinematic Traveler"
+        data-prompt="Young traveler in a European train station, candid expression, shallow depth of field, 35mm documentary photography."
+        data-image="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=1200&q=92"
+      >
+
+        <img
+          src="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=1200&q=92"
+          alt="Cinematic Traveler"
+          loading="lazy"
+        >
+
+        <div class="avatar-overlay">
+
+          <div class="avatar-name">
+            Cinematic Traveler
+          </div>
+
+          <div class="avatar-prompt">
+            Young traveler in a European train station, candid expression, shallow depth of field, 35mm documentary photography.
+          </div>
+
+          <div class="avatar-actions">
+
+            <button
+              class="small-button"
+              onclick="remixCard(this)"
+            >
+              <i data-lucide="refresh-cw" width="12"></i>
+              Remix This Avatar
+            </button>
+
+            <button
+              class="small-button secondary"
+              onclick="openAvatar(this)"
+            >
+              View
+            </button>
+
+          </div>
+
+        </div>
+
+      </article>
+
+      <!-- Avatar 4 -->
+      <article
+        class="avatar-card"
+        data-name="Studio Minimal"
+        data-prompt="Photorealistic studio headshot, neutral wardrobe, softbox key light, subtle subsurface scattering, Hasselblad X2D 100C."
+        data-image="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1200&q=92"
+      >
+
+        <img
+          src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1200&q=92"
+          alt="Studio Minimal"
+          loading="lazy"
+        >
+
+        <div class="avatar-overlay">
+
+          <div class="avatar-name">
+            Studio Minimal
+          </div>
+
+          <div class="avatar-prompt">
+            Photorealistic studio headshot, neutral wardrobe, softbox key light, subtle subsurface scattering, Hasselblad X2D 100C.
+          </div>
+
+          <div class="avatar-actions">
+
+            <button
+              class="small-button"
+              onclick="remixCard(this)"
+            >
+              <i data-lucide="refresh-cw" width="12"></i>
+              Remix This Avatar
+            </button>
+
+            <button
+              class="small-button secondary"
+              onclick="openAvatar(this)"
+            >
+              View
+            </button>
+
+          </div>
+
+        </div>
+
+      </article>
+
+      <!-- Avatar 5 -->
+      <article
+        class="avatar-card"
+        data-name="Modern Portrait"
+        data-prompt="Modern professional portrait with authentic pores and fine hair detail, clean background, soft volumetric studio lighting."
+        data-image="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=1200&q=92"
+      >
+
+        <img
+          src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=1200&q=92"
+          alt="Modern Portrait"
+          loading="lazy"
+        >
+
+        <div class="avatar-overlay">
+
+          <div class="avatar-name">
+            Modern Portrait
+          </div>
+
+          <div class="avatar-prompt">
+            Modern professional portrait with authentic pores and fine hair detail, clean background, soft volumetric studio lighting.
+          </div>
+
+          <div class="avatar-actions">
+
+            <button
+              class="small-button"
+              onclick="remixCard(this)"
+            >
+              <i data-lucide="refresh-cw" width="12"></i>
+              Remix This Avatar
+            </button>
+
+            <button
+              class="small-button secondary"
+              onclick="openAvatar(this)"
+            >
+              View
+            </button>
+
+          </div>
+
+        </div>
+
+      </article>
+
+      <!-- Avatar 6 -->
+      <article
+        class="avatar-card"
+        data-name="Street Story"
+        data-prompt="Cinematic street portrait at blue hour, expressive eyes, rain reflections, realistic skin, 50mm lens, subtle grain."
+        data-image="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1200&q=92"
+      >
+
+        <img
+          src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1200&q=92"
+          alt="Street Story"
+          loading="lazy"
+        >
+
+        <div class="avatar-overlay">
+
+          <div class="avatar-name">
+            Street Story
+          </div>
+
+          <div class="avatar-prompt">
+            Cinematic street portrait at blue hour, expressive eyes, rain reflections, realistic skin, 50mm lens, subtle grain.
+          </div>
+
+          <div class="avatar-actions">
+
+            <button
+              class="small-button"
+              onclick="remixCard(this)"
+            >
+              <i data-lucide="refresh-cw" width="12"></i>
+              Remix This Avatar
+            </button>
+
+            <button
+              class="small-button secondary"
+              onclick="openAvatar(this)"
+            >
+              View
+            </button>
+
+          </div>
+
+        </div>
+
+      </article>
+
+    </div>
+
+  </section>
+
+  <!-- ========================================================
+       FOOTER
+       ======================================================== -->
+
+  <footer id="api">
+
+    <div class="footer-inner">
+
+      <span>
+        PersonaAI · Photorealistic human synthesis
+      </span>
+
+      <span class="api-ready">
+        <i data-lucide="layers-3" width="13"></i>
+        API-ready for Fal.ai / Replicate
+      </span>
+
+    </div>
+
+  </footer>
+
+  <!-- ========================================================
+       AVATAR MODAL
+       ======================================================== -->
+
+  <div
+    id="avatarModal"
+    class="modal"
+    onclick="backgroundClose(event)"
+  >
+
+    <div class="modal-content">
+
+      <div class="modal-top">
+
+        <div>
+
+          <div
+            id="modalName"
+            class="modal-name"
+          >
+            Avatar
+          </div>
+
+          <div class="modal-subtitle">
+            PersonaAI HD Preview
+          </div>
+
+        </div>
+
+        <button
+          class="close-modal"
+          onclick="closeModal()"
+        >
+          <i data-lucide="x" width="17"></i>
+        </button>
+
+      </div>
+
+      <div class="modal-grid">
+
+        <div class="modal-image">
+
+          <img
+            id="modalImage"
+            src=""
+            alt=""
+          >
+
+        </div>
+
+        <div class="modal-details">
+
+          <div class="modal-label">
+            Prompt
+          </div>
+
+          <div
+            id="modalPrompt"
+            class="modal-prompt"
+          ></div>
+
+          <div class="modal-buttons">
+
+            <button
+              class="modal-button"
+              onclick="copyModalPrompt()"
+            >
+              <i data-lucide="copy" width="14"></i>
+              Copy Prompt
+            </button>
+
+            <button
+              class="modal-button primary"
+              onclick="generateVariation()"
+            >
+              <i data-lucide="refresh-cw" width="14"></i>
+              Generate Variations
+            </button>
+
+            <button
+              class="modal-button"
+              onclick="downloadCurrentAvatar()"
+            >
+              <i data-lucide="download" width="14"></i>
+              HD Download
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Toast -->
+  <div
+    id="toast"
+    class="toast"
+  >
+    <i data-lucide="check" width="14"></i>
+    <span id="toastText">
+      Done
+    </span>
+  </div>
+
+  <!-- ========================================================
+       JAVASCRIPT
+       ======================================================== -->
+
+  <script>
+
+    /* ========================================================
+       INITIALIZE ICONS
+       ======================================================== */
+
+    lucide.createIcons();
+
+
+    /* ========================================================
+       PROMPT PLACEHOLDER CYCLING
+       ======================================================== */
+
+    const prompts = [
+
+      "30-year-old Japanese architect in a rain-slicked street, 85mm portrait...",
+
+      "Confident creative director in a sunlit brutalist studio, editorial fashion...",
+
+      "Young marine biologist on a foggy coastline, documentary photography...",
+
+      "Elegant fashion portrait in Paris at blue hour, vintage 35mm film..."
+
+    ];
+
+    let placeholderIndex = 0;
+
+    const promptInput =
+      document.getElementById("prompt");
+
+    setInterval(() => {
+
+      if (
+        document.activeElement === promptInput ||
+        promptInput.value.trim() !== ""
+      ) {
+        return;
+      }
+
+      promptInput.style.opacity = ".3";
+
+      setTimeout(() => {
+
+        placeholderIndex =
+          (placeholderIndex + 1) %
+          prompts.length;
+
+        promptInput.placeholder =
+          prompts[placeholderIndex];
+
+        promptInput.style.opacity = "1";
+
+      }, 250);
+
+    }, 3200);
+
+
+    /* ========================================================
+       MAGIC PROMPT
+       ======================================================== */
+
+    let magicEnabled = true;
+
+    const magicEnhancement =
+      "hyper-photorealistic, authentic natural skin texture, visible fine pores, subtle subsurface scattering, realistic individual hairs, physically accurate eyes, volumetric studio lighting, Hasselblad X2D 100C, 85mm lens, shallow depth of field, cinematic color science";
+
+    function toggleMagic() {
+
+      magicEnabled =
+        !magicEnabled;
+
+      const button =
+        document.getElementById("magicButton");
+
+      const switchElement =
+        document.getElementById("magicSwitch");
+
+      if (magicEnabled) {
+
+        button.classList.remove("off");
+
+        switchElement.classList.add("active");
+
+      } else {
+
+        button.classList.add("off");
+
+        switchElement.classList.remove("active");
+
+      }
+
+    }
+
+
+    /* ========================================================
+       STYLE PILLS
+       ======================================================== */
+
+    document
+      .querySelectorAll(".style-pill")
+      .forEach(button => {
+
+        button.addEventListener("click", () => {
+
+          document
+            .querySelectorAll(".style-pill")
+            .forEach(item =>
+              item.classList.remove("active")
+            );
+
+          button.classList.add("active");
+
+        });
+
+      });
+
+
+    /* ========================================================
+       ASPECT RATIO
+       ======================================================== */
+
+    let selectedRatio = "1:1";
+
+    document
+      .querySelectorAll(".ratio")
+      .forEach(button => {
+
+        button.addEventListener("click", () => {
+
+          document
+            .querySelectorAll(".ratio")
+            .forEach(item =>
+              item.classList.remove("active")
+            );
+
+          button.classList.add("active");
+
+          selectedRatio =
+            button.dataset.ratio;
+
+        });
+
+      });
+
+
+    /* ========================================================
+       GENERATION
+       ======================================================== */
+
+    const generationSteps = [
+
+      [8, "Understanding facial structure..."],
+
+      [20, "Building realistic anatomy..."],
+
+      [36, "Rendering skin pores..."],
+
+      [53, "Generating individual hair detail..."],
+
+      [68, "Balancing volumetric light..."],
+
+      [81, "Refining eyes and facial micro-detail..."],
+
+      [93, "Applying photographic color science..."],
+
+      [100, "Finalizing HD avatar..."]
+
+    ];
+
+    let generatedPrompt = "";
+
+    function generateAvatar() {
+
+      const rawPrompt =
+        promptInput.value.trim();
+
+      if (!rawPrompt) {
+
+        showToast(
+          "Describe the human you want to create."
+        );
+
+        promptInput.focus();
+
+        return;
+
+      }
+
+      const activeStyle =
+        document.querySelector(
+          ".style-pill.active"
+        )?.textContent || "Studio Portrait";
+
+      const gender =
+        document.getElementById("gender").value;
+
+      const ethnicity =
+        document.getElementById("ethnicity").value;
+
+      generatedPrompt =
+        rawPrompt +
+        ", " +
+        activeStyle +
+        ", " +
+        selectedRatio +
+        ", " +
+        gender +
+        ", " +
+        ethnicity;
+
+      if (magicEnabled) {
+
+        generatedPrompt +=
+          ", " +
+          magicEnhancement;
+
+      }
+
+      const container =
+        document.getElementById(
+          "generationContainer"
+        );
+
+      const button =
+        document.getElementById(
+          "generateButton"
+        );
+
+      const status =
+        document.getElementById(
+          "generationStatus"
+        );
+
+      const progressBar =
+        document.getElementById(
+          "progressBar"
+        );
+
+      const progressPercent =
+        document.getElementById(
+          "progressPercent"
+        );
+
+      container.classList.add("visible");
+
+      button.disabled = true;
+
+      button.innerHTML =
+        '<i data-lucide="loader-circle" width="15" class="spin"></i><span>Generating...</span>';
+
+      lucide.createIcons();
+
+      let step = 0;
+
+      progressBar.style.width = "0%";
+
+      progressPercent.textContent =
+        "0%";
+
+      status.textContent =
+        "Preparing your portrait...";
+
+      const interval =
+        setInterval(() => {
+
+          const current =
+            generationSteps[step];
+
+          if (!current) {
+
+            clearInterval(interval);
+
+            finishGeneration();
+
+            return;
+
+          }
+
+          const percentage =
+            current[0];
+
+          const message =
+            current[1];
+
+          progressBar.style.width =
+            percentage + "%";
+
+          progressPercent.textContent =
+            percentage + "%";
+
+          status.textContent =
+            message;
+
+          step++;
+
+        }, 550);
+
+    }
+
+
+    function finishGeneration() {
+
+      const button =
+        document.getElementById(
+          "generateButton"
+        );
+
+      const status =
+        document.getElementById(
+          "generationStatus"
+        );
+
+      status.textContent =
+        "Avatar ready — connect your image API to display the generated result.";
+
+      button.disabled = false;
+
+      button.innerHTML =
+        '<i data-lucide="sparkles" width="15"></i><span>Generate Avatar</span>';
+
+      lucide.createIcons();
+
+      showToast(
+        "Generation complete"
+      );
+
+      /*
+       * ======================================================
+       * BACKEND INTEGRATION POINT
+       * ======================================================
+       *
+       * Replace the simulation above with:
+       *
+       * fetch("/api/generate", {
+       *   method: "POST",
+       *   headers: {
+       *     "Content-Type": "application/json"
+       *   },
+       *   body: JSON.stringify({
+       *     prompt: generatedPrompt,
+       *     ratio: selectedRatio,
+       *     style: document.querySelector(".style-pill.active").textContent,
+       *     gender: document.getElementById("gender").value,
+       *     ethnicity: document.getElementById("ethnicity").value
+       *   })
+       * })
+       *
+       * Your secure server endpoint can then call:
+       *
+       * Fal.ai
+       * OR
+       * Replicate
+       *
+       * Never expose your API secret in this HTML file.
+       */
+    }
+
+
+    /* ========================================================
+       REMIX
+       ======================================================== */
+
+    function remixCard(button) {
+
+      const card =
+        button.closest(".avatar-card");
+
+      const prompt =
+        card.dataset.prompt;
+
+      promptInput.value =
+        prompt;
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+
+      setTimeout(() => {
+
+        promptInput.focus();
+
+      }, 600);
+
+      showToast(
+        "Prompt remixed into generator"
+      );
+
+    }
+
+
+    /* ========================================================
+       OPEN AVATAR
+       ======================================================== */
+
+    let currentAvatar = {
+      name: "",
+      prompt: "",
+      image: ""
+    };
+
+    function openAvatar(button) {
+
+      const card =
+        button.closest(".avatar-card");
+
+      currentAvatar = {
+
+        name:
+          card.dataset.name,
+
+        prompt:
+          card.dataset.prompt,
+
+        image:
+          card.dataset.image
+
+      };
+
+      document.getElementById(
+        "modalName"
+      ).textContent =
+        currentAvatar.name;
+
+      document.getElementById(
+        "modalPrompt"
+      ).textContent =
+        currentAvatar.prompt;
+
+      document.getElementById(
+        "modalImage"
+      ).src =
+        currentAvatar.image;
+
+      document.getElementById(
+        "modalImage"
+      ).alt =
+        currentAvatar.name;
+
+      document
+        .getElementById("avatarModal")
+        .classList.add("visible");
+
+      document.body.style.overflow =
+        "hidden";
+
+    }
+
+
+    function closeModal() {
+
+      document
+        .getElementById("avatarModal")
+        .classList.remove("visible");
+
+      document.body.style.overflow =
+        "";
+
+    }
+
+
+    function backgroundClose(event) {
+
+      if (
+        event.target.id ===
+        "avatarModal"
+      ) {
+
+        closeModal();
+
+      }
+
+    }
+
+
+    /* ========================================================
+       COPY PROMPT
+       ======================================================== */
+
+    async function copyModalPrompt() {
+
+      try {
+
+        await navigator.clipboard.writeText(
+          currentAvatar.prompt
+        );
+
+        showToast(
+          "Prompt copied"
+        );
+
+      } catch {
+
+        showToast(
+          "Copy failed — select the prompt manually."
+        );
+
+      }
+
+    }
+
+
+    /* ========================================================
+       GENERATE VARIATION
+       ======================================================== */
+
+    function generateVariation() {
+
+      promptInput.value =
+        currentAvatar.prompt;
+
+      closeModal();
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+
+      setTimeout(() => {
+
+        promptInput.focus();
+
+      }, 600);
+
+      showToast(
+        "Variation prompt loaded"
+      );
+
+    }
+
+
+    /* ========================================================
+       HD DOWNLOAD
+       ======================================================== */
+
+    async function downloadCurrentAvatar() {
+
+      try {
+
+        const response =
+          await fetch(
+            currentAvatar.image
+          );
+
+        const blob =
+          await response.blob();
+
+        const url =
+          URL.createObjectURL(blob);
+
+        const link =
+          document.createElement("a");
+
+        link.href = url;
+
+        link.download =
+          "personaai-" +
+          currentAvatar.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-") +
+          ".jpg";
+
+        document.body.appendChild(link);
+
+        link.click();
+
+        link.remove();
+
+        URL.revokeObjectURL(url);
+
+        showToast(
+          "HD download started"
+        );
+
+      } catch {
+
+        /*
+         * Fallback if remote image
+         * blocks browser download.
+         */
+
+        window.open(
+          currentAvatar.image,
+          "_blank"
+        );
+
+        showToast(
+          "Opening HD image"
+        );
+
+      }
+
+    }
+
+
+    /* ========================================================
+       MOBILE MENU
+       ======================================================== */
+
+    function toggleMobileMenu() {
+
+      const links =
+        document.querySelector(
+          ".nav-links"
+        );
+
+      if (
+        links.style.display ===
+        "flex"
+      ) {
+
+        links.style.display =
+          "";
+
+      } else {
+
+        links.style.display =
+          "flex";
+
+        links.style.position =
+          "absolute";
+
+        links.style.top =
+          "65px";
+
+        links.style.left =
+          "0";
+
+        links.style.right =
+          "0";
+
+        links.style.padding =
+          "15px";
+
+        links.style.flexDirection =
+          "column";
+
+        links.style.background =
+          "rgba(15,15,19,.96)";
+
+        links.style.border =
+          "1px solid rgba(255,255,255,.08)";
+
+        links.style.borderRadius =
+          "15px";
+
+        links.style.backdropFilter =
+          "blur(20px)";
+
+      }
+
+    }
+
+
+    /* ========================================================
+       TOAST
+       ======================================================== */
+
+    let toastTimer;
+
+    function showToast(message) {
+
+      const toast =
+        document.getElementById(
+          "toast"
+        );
+
+      const text =
+        document.getElementById(
+          "toastText"
+        );
+
+      text.textContent =
+        message;
+
+      toast.classList.add(
+        "show"
+      );
+
+      clearTimeout(
+        toastTimer
+      );
+
+      toastTimer =
+        setTimeout(() => {
+
+          toast.classList.remove(
+            "show"
+          );
+
+        }, 2500);
+
+    }
+
+
+    /* ========================================================
+       EXTRA CSS FOR SPINNER
+       ======================================================== */
+
+    const extraStyle =
+      document.createElement("style");
+
+    extraStyle.textContent = `
+
+      .spin {
+        animation:
+          spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+    `;
+
+    document.head.appendChild(
+      extraStyle
+    );
+
+  </script>
+
 </body>
 </html>
