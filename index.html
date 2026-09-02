@@ -3,597 +3,906 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PersonaAI — Hyper-Photorealistic Human Generator</title>
+    <title>Global Vogue AI - Editorial Avatar & Motion Studio</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <script src="https://unpkg.com/lucide@latest"></script>
-    
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
+                    colors: {
+                        gold: {
+                            100: '#FDF8E2',
+                            300: '#EED68B',
+                            400: '#E5C158',
+                            500: '#D4AF37',
+                            600: '#AA8C2C',
+                            700: '#7F671F',
+                        },
+                        vogue: {
+                            950: '#050506',
+                            900: '#09090B',
+                            850: '#111115',
+                            800: '#18181B',
+                            700: '#27272A',
+                            600: '#3F3F46',
+                        }
+                    },
                     fontFamily: {
+                        serif: ['"Cormorant Garamond"', 'serif'],
                         sans: ['"Plus Jakarta Sans"', 'sans-serif'],
                     },
-                    colors: {
-                        darkBg: '#0A0A0C',
-                        surface: 'rgba(18, 18, 24, 0.65)',
-                        surfaceBorder: 'rgba(255, 255, 255, 0.12)',
-                        violetAccent: '#8B5CF6',
-                        blueAccent: '#3B82F6',
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'shimmer': 'shimmer 2.5s infinite linear',
                     },
                     keyframes: {
                         shimmer: {
                             '0%': { transform: 'translateX(-100%)' },
                             '100%': { transform: 'translateX(100%)' }
-                        },
-                        pulseGlow: {
-                            '0%, 100%': { opacity: '0.4', filter: 'blur(40px)' },
-                            '50%': { opacity: '0.8', filter: 'blur(55px)' }
                         }
-                    },
-                    animation: {
-                        shimmer: 'shimmer 2.5s infinite',
-                        pulseGlow: 'pulseGlow 6s ease-in-out infinite',
                     }
                 }
             }
         }
     </script>
-    <style>
-        body {
-            background-color: #0A0A0C;
-            color: #F3F4F6;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            overflow-x: hidden;
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .glass-card {
+                background: rgba(17, 17, 21, 0.75);
+                backdrop-filter: blur(12px);
+                border: 1px solid rgba(212, 175, 55, 0.15);
+            }
+            .glass-card-hover {
+                transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            .glass-card-hover:hover {
+                border-color: rgba(212, 175, 55, 0.5);
+                box-shadow: 0 12px 30px -10px rgba(212, 175, 55, 0.15);
+                transform: translateY(-2px);
+            }
+            .gold-gradient-text {
+                background: linear-gradient(135deg, #FFF0BD 0%, #D4AF37 50%, #997A15 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+            .gold-gradient-btn {
+                background: linear-gradient(135deg, #D4AF37 0%, #AA8C2C 100%);
+                transition: all 0.3s ease;
+            }
+            .gold-gradient-btn:hover {
+                background: linear-gradient(135deg, #E5C158 0%, #D4AF37 100%);
+                box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+            }
+            .custom-scrollbar::-webkit-scrollbar {
+                width: 5px;
+                height: 5px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+                background: #09090B;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #27272A;
+                border-radius: 3px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                background: #D4AF37;
+            }
         }
-        .glass-panel {
-            background: rgba(18, 18, 26, 0.65);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .glass-panel-interactive {
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .glass-panel-interactive:hover {
-            border-color: rgba(139, 92, 246, 0.4);
-            box-shadow: 0 0 25px rgba(139, 92, 246, 0.15);
-        }
-        .text-gradient {
-            background: linear-gradient(135deg, #FFFFFF 30%, #A78BFA 70%, #60A5FA 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .btn-gradient {
-            background: linear-gradient(135deg, #7C3AED 0%, #2563EB 100%);
-        }
-        .btn-gradient:hover {
-            background: linear-gradient(135deg, #6D28D9 0%, #1D4ED8 100%);
-        }
-        /* Custom scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0A0A0C; }
-        ::-webkit-scrollbar-thumb { background: #27272A; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #3F3F46; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between relative selection:bg-violet-500 selection:text-white">
+<body class="bg-vogue-950 text-zinc-100 font-sans antialiased min-h-screen flex flex-col custom-scrollbar selection:bg-gold-500 selection:text-black">
 
-    <div class="fixed top-[-10%] left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-r from-violet-600/30 to-blue-600/20 rounded-full animate-pulseGlow pointer-events-none -z-10"></div>
-    <div class="fixed bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-violet-900/10 rounded-full blur-[120px] pointer-events-none -z-10"></div>
-
-    <header class="sticky top-0 z-40 w-full glass-panel border-b border-white/10 px-6 py-4">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
-            <div class="flex items-center gap-3 cursor-pointer" onclick="window.scrollTo({top:0, behavior:'smooth'})">
-                <div class="w-10 h-10 rounded-xl btn-gradient flex items-center justify-center shadow-lg shadow-violet-500/20">
-                    <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
-                </div>
-                <span class="text-xl font-bold tracking-tight text-white">Persona<span class="text-violet-400">AI</span></span>
+    <header class="sticky top-0 z-40 bg-vogue-900/90 backdrop-blur-md border-b border-gold-500/20 px-4 lg:px-8 py-3.5 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-full border border-gold-500/40 flex items-center justify-center bg-gold-500/10">
+                <i data-lucide="sparkles" class="w-5 h-5 text-gold-400"></i>
             </div>
-
-            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
-                <a href="#hero" class="hover:text-white transition-colors">Generator</a>
-                <a href="#showcase" class="hover:text-white transition-colors">Community Showcase</a>
-                <a href="#" class="hover:text-white transition-colors">API Docs</a>
+            <div>
+                <h1 class="font-serif text-2xl font-bold tracking-widest uppercase gold-gradient-text">GLOBAL VOGUE AI</h1>
+                <p class="text-[10px] tracking-widest text-zinc-400 uppercase -mt-1 font-mono">100 Global Editorial Avatars & Motion Studio</p>
             </div>
+        </div>
 
-            <div class="flex items-center gap-4">
-                <span class="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-violet-500/10 text-violet-300 border border-violet-500/20">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> 8K Engine v2.4 Active
+        <div class="flex items-center space-x-4">
+            <div id="queue-status-badge" class="hidden md:flex items-center space-x-2 bg-vogue-850 border border-zinc-800 px-3 py-1.5 rounded-full text-xs font-mono text-zinc-300">
+                <span class="relative flex h-2 w-2">
+                    <span id="queue-dot-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold-400 opacity-75 hidden"></span>
+                    <span id="queue-dot" class="relative inline-flex rounded-full h-2 w-2 bg-zinc-500"></span>
                 </span>
-                <button class="px-4 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white transition-all">
-                    Upgrade to Pro
-                </button>
+                <span id="queue-text">System Idle</span>
             </div>
+
+            <button id="btn-export-all" onclick="app.exportAllAssets()" class="px-4 py-2 border border-gold-500/30 hover:border-gold-500 text-gold-400 hover:text-gold-300 bg-gold-500/5 hover:bg-gold-500/10 rounded-md text-xs font-semibold tracking-wider transition flex items-center space-x-2">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">EXPORT ALL (ZIP)</span>
+            </button>
+
+            <button id="btn-generate-batch" onclick="app.startBatchGeneration()" class="gold-gradient-btn px-5 py-2 text-vogue-950 rounded-md text-xs font-bold tracking-wider uppercase flex items-center space-x-2 shadow-lg">
+                <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                <span>BATCH GENERATE 100</span>
+            </button>
         </div>
     </header>
 
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 pt-12 pb-24 space-y-16">
+    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden">
 
-        <section id="hero" class="text-center space-y-8 max-w-4xl mx-auto pt-6">
-            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel text-xs font-medium text-violet-300 border border-violet-500/30 mb-2">
-                <i data-lucide="wand-2" class="w-3.5 h-3.5"></i> Single-Text Photorealistic Human Engine
+        <aside class="w-full lg:w-80 xl:w-96 bg-vogue-900 border-r border-gold-500/10 p-5 flex flex-col space-y-6 overflow-y-auto custom-scrollbar flex-shrink-0">
+            <div>
+                <h2 class="font-serif text-lg font-bold text-gold-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+                    <span>Style Parameters</span>
+                    <i data-lucide="sliders-horizontal" class="w-4 h-4 text-gold-500/60"></i>
+                </h2>
+                <p class="text-xs text-zinc-400">Customize luxury attributes injected into the 100-profile global prompt engine.</p>
             </div>
 
-            <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight">
-                Generate Photorealistic Humans <br class="hidden sm:inline"/>
-                <span class="text-gradient">in One Click</span>
-            </h1>
-
-            <p class="text-zinc-400 text-base sm:text-lg max-w-2xl mx-auto font-normal">
-                State-of-the-art synthetic human generation with true-to-life skin porosity, sub-surface scattering, and dynamic cinematic lighting.
-            </p>
-
-            <div class="glass-panel p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl shadow-2xl relative group border border-white/15">
-                <div class="flex flex-col md:flex-row items-center gap-3">
-                    
-                    <div class="relative w-full flex items-center">
-                        <i data-lucide="sparkles" class="absolute left-4 w-5 h-5 text-zinc-400"></i>
-                        <input 
-                            type="text" 
-                            id="promptInput"
-                            class="w-full bg-transparent pl-12 pr-28 py-3.5 text-sm sm:text-base text-white placeholder-zinc-500 focus:outline-none"
-                            placeholder="30-year-old Japanese architect in a rain-slicked street..."
-                        />
-                        
-                        <button 
-                            id="magicEnhancerBtn"
-                            onclick="toggleMagicEnhancer()"
-                            title="Toggle Magic Prompt Enhancer (Appends photography terms)"
-                            class="absolute right-3 px-2.5 py-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-xs font-medium text-zinc-300 flex items-center gap-1.5 border border-white/10 transition-all">
-                            <i data-lucide="wand-2" class="w-3.5 h-3.5 text-violet-400"></i>
-                            <span class="hidden sm:inline">Magic</span>
-                            <span id="magicBadge" class="w-2 h-2 rounded-full bg-zinc-500"></span>
-                        </button>
-                    </div>
-
-                    <button 
-                        onclick="generateAvatar()" 
-                        class="w-full md:w-auto px-8 py-4 rounded-xl sm:rounded-2xl btn-gradient text-white font-semibold text-sm flex items-center justify-center gap-2 relative overflow-hidden group shadow-lg shadow-violet-600/30 shrink-0">
-                        <span class="relative z-10 flex items-center gap-2">
-                            <span>Generate Avatar</span>
-                            <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                        </span>
-                        <div class="absolute inset-0 bg-white/20 -translate-x-full group-hover:animate-shimmer"></div>
-                    </button>
+            <div class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-medium text-zinc-300 uppercase tracking-wider mb-1.5">Fabric & Couture Material</label>
+                    <select id="param-fabric" onchange="app.updateParameters()" class="w-full bg-vogue-850 border border-zinc-800 focus:border-gold-500 text-zinc-200 rounded-md px-3 py-2 outline-none transition">
+                        <option value="Silk">Mulberry Silk Couture</option>
+                        <option value="Velvet">Deep Plush Velvet</option>
+                        <option value="Organza" selected>Sheer Silk Organza</option>
+                        <option value="Brocade">Gold-Thread Brocade</option>
+                        <option value="Chiffon">Flowing Chiffon</option>
+                        <option value="Satin">Liquid Gloss Satin</option>
+                        <option value="Tulle">Layered Tulle</option>
+                        <option value="Cashmere">Ultra-Fine Cashmere</option>
+                        <option value="Hand-woven Lace">Vintage Hand-woven Lace</option>
+                    </select>
                 </div>
 
-                <div class="mt-4 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-4 text-xs">
-                    
-                    <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 w-full md:w-auto">
-                        <span class="text-zinc-500 font-medium shrink-0">Styles:</span>
-                        <div class="flex items-center gap-1.5">
-                            <button onclick="selectStyle(this, 'Studio Portrait')" class="style-pill px-3 py-1.5 rounded-lg glass-panel hover:bg-white/10 text-zinc-300 border border-white/10 transition-all font-medium">Studio Portrait</button>
-                            <button onclick="selectStyle(this, 'Cinematic Street')" class="style-pill px-3 py-1.5 rounded-lg glass-panel hover:bg-white/10 text-zinc-300 border border-white/10 transition-all font-medium">Cinematic Street</button>
-                            <button onclick="selectStyle(this, 'Editorial Fashion')" class="style-pill px-3 py-1.5 rounded-lg glass-panel hover:bg-white/10 text-zinc-300 border border-white/10 transition-all font-medium">Editorial Fashion</button>
-                            <button onclick="selectStyle(this, 'Raw Photography')" class="style-pill px-3 py-1.5 rounded-lg glass-panel hover:bg-white/10 text-zinc-300 border border-white/10 transition-all font-medium">Raw Photography</button>
-                            <button onclick="selectStyle(this, 'Vintage Film')" class="style-pill px-3 py-1.5 rounded-lg glass-panel hover:bg-white/10 text-zinc-300 border border-white/10 transition-all font-medium">Vintage Film</button>
+                <div>
+                    <label class="block font-medium text-zinc-300 uppercase tracking-wider mb-1.5">High Fashion Palette</label>
+                    <select id="param-palette" onchange="app.updateParameters()" class="w-full bg-vogue-850 border border-zinc-800 focus:border-gold-500 text-zinc-200 rounded-md px-3 py-2 outline-none transition">
+                        <option value="Royal Emerald & Gold" selected>Royal Emerald & Champagne Gold</option>
+                        <option value="Crimson & Obsidian">Deep Crimson & Obsidian</option>
+                        <option value="Pastel Rose & Champagne">Pastel Rose & Metallic Bronze</option>
+                        <option value="Monochromatic Platinum">Monochromatic Platinum & Onyx</option>
+                        <option value="Earthy Ocher & Terracotta">Earthy Ocher & Burnt Terracotta</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-medium text-zinc-300 uppercase tracking-wider mb-1.5">Pattern & Craftsmanship</label>
+                    <select id="param-pattern" onchange="app.updateParameters()" class="w-full bg-vogue-850 border border-zinc-800 focus:border-gold-500 text-zinc-200 rounded-md px-3 py-2 outline-none transition">
+                        <option value="Intricate Zardozi Embroidery" selected>Intricate Zardozi Hand Embroidery</option>
+                        <option value="Baroque Damask">Opulent Baroque Damask</option>
+                        <option value="Minimalist Geometry">Avant-Garde Minimalist Geometry</option>
+                        <option value="Traditional Ikat">Artisanal Woven Ikat</option>
+                        <option value="Art Nouveau Floral">Art Nouveau Floral Filigree</option>
+                        <option value="Gothic Lace Work">Gothic Filigree Lace</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-medium text-zinc-300 uppercase tracking-wider mb-1.5">Editorial Backdrop / Setting</label>
+                    <select id="param-backdrop" onchange="app.updateParameters()" class="w-full bg-vogue-850 border border-zinc-800 focus:border-gold-500 text-zinc-200 rounded-md px-3 py-2 outline-none transition">
+                        <option value="Paris Haussmannian Balcony" selected>Parisian Haussmannian Balcony at Sunset</option>
+                        <option value="Kyoto Bamboo Forest at Dusk">Kyoto Bamboo Forest at Golden Dusk</option>
+                        <option value="Minimalist Concrete Architectural Studio">Minimalist Brutalist Architectural Studio</option>
+                        <option value="Moroccan Palace Courtyard">Moroccan Palace Courtyard at Twilight</option>
+                        <option value="Royal Opera House">Grand Royal Opera House Tiered Stage</option>
+                        <option value="Sahara Dunes at Golden Hour">Sahara Desert Dunes at Cinematic Golden Hour</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="border-t border-zinc-800 pt-5 space-y-4">
+                <h3 class="font-serif text-sm font-bold text-gold-400 uppercase tracking-wider flex items-center justify-between">
+                    <span>API & Queue Config</span>
+                    <i data-lucide="cpu" class="w-4 h-4 text-gold-500/60"></i>
+                </h3>
+
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-zinc-300">Mode</span>
+                        <div class="flex bg-vogue-850 p-0.5 rounded border border-zinc-800">
+                            <button id="mode-mock-btn" onclick="app.setApiMode('mock')" class="px-2.5 py-1 rounded text-[11px] font-semibold bg-gold-500 text-vogue-950">Mock Simulation</button>
+                            <button id="mode-live-btn" onclick="app.setApiMode('live')" class="px-2.5 py-1 rounded text-[11px] font-semibold text-zinc-400 hover:text-zinc-200">Live API</button>
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-                        <div class="flex items-center bg-zinc-900/80 p-1 rounded-lg border border-white/10">
-                            <button onclick="setAspectRatio(this, '1:1')" class="aspect-btn px-2.5 py-1 rounded text-xs font-semibold bg-violet-600 text-white">1:1</button>
-                            <button onclick="setAspectRatio(this, '9:16')" class="aspect-btn px-2.5 py-1 rounded text-xs font-semibold text-zinc-400 hover:text-white">9:16</button>
-                            <button onclick="setAspectRatio(this, '16:9')" class="aspect-btn px-2.5 py-1 rounded text-xs font-semibold text-zinc-400 hover:text-white">16:9</button>
-                        </div>
-
-                        <div class="flex items-center gap-2">
-                            <select id="genderFilter" class="bg-zinc-900/80 border border-white/10 text-zinc-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none">
-                                <option value="any">Gender: Any</option>
-                                <option value="female">Female</option>
-                                <option value="male">Male</option>
-                                <option value="nonbinary">Non-Binary</option>
+                    <div id="live-api-settings" class="hidden space-y-2 pt-2">
+                        <div>
+                            <label class="block text-[11px] text-zinc-400 mb-1">Target Endpoints</label>
+                            <select id="api-provider" class="w-full bg-vogue-850 border border-zinc-800 text-zinc-200 text-xs rounded px-2.5 py-1.5 outline-none">
+                                <option value="fal">Fal.ai (FLUX.1 & LTX Video)</option>
+                                <option value="replicate">Replicate API</option>
+                                <option value="kling">Kling AI Video API</option>
                             </select>
                         </div>
-                    </div>
-
-                </div>
-            </div>
-        </section>
-
-        <section id="canvasSection" class="hidden max-w-xl mx-auto">
-            <div class="glass-panel rounded-3xl p-6 border border-white/15 space-y-4">
-                
-                <div id="loadingState" class="space-y-4">
-                    <div class="relative w-full aspect-square rounded-2xl bg-zinc-800/60 overflow-hidden flex flex-col items-center justify-center p-6 text-center space-y-4">
-                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"></div>
-                        <div class="w-16 h-16 rounded-2xl border border-violet-500/30 flex items-center justify-center bg-violet-500/10 relative">
-                            <i data-lucide="loader-2" class="w-8 h-8 text-violet-400 animate-spin"></i>
-                        </div>
                         <div>
-                            <p id="microStepText" class="text-sm font-semibold text-violet-300">Initializing neural engine...</p>
-                            <p class="text-xs text-zinc-500 mt-1">Hasselblad X2D 100C Simulation</p>
+                            <label class="block text-[11px] text-zinc-400 mb-1">Bearer API Key</label>
+                            <input type="password" id="api-key" placeholder="sk-..." class="w-full bg-vogue-850 border border-zinc-800 text-zinc-200 text-xs rounded px-2.5 py-1.5 outline-none focus:border-gold-500">
                         </div>
                     </div>
+                </div>
+
+                <div class="space-y-1.5">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-zinc-300">Parallel Stream Limit</span>
+                        <span id="concurrency-val" class="font-mono text-gold-400">5 Streams</span>
+                    </div>
+                    <input type="range" id="concurrency-slider" min="1" max="10" value="5" oninput="document.getElementById('concurrency-val').innerText = this.value + ' Streams'; app.concurrencyLimit = parseInt(this.value);" class="w-full accent-gold-500 h-1 bg-zinc-800 rounded">
+                    <p class="text-[10px] text-zinc-400">Controls parallel queue rendering workers to avoid browser/network memory locks.</p>
+                </div>
+            </div>
+
+            <div class="border-t border-zinc-800 pt-5 flex-1 flex flex-col justify-end">
+                <div class="bg-vogue-850 border border-zinc-800/80 rounded-lg p-3 space-y-2">
+                    <div class="flex items-center justify-between text-[11px] text-zinc-400 font-mono">
+                        <span>MASTER PROMPT STRUCTURE</span>
+                        <i data-lucide="file-code" class="w-3.5 h-3.5 text-gold-400"></i>
+                    </div>
+                    <p id="prompt-preview" class="text-[11px] font-mono leading-relaxed text-zinc-300 line-clamp-4">
+                        Full-body fashion editorial portrait of a beautiful [Ethnicity/Region] woman draped in a Sheer Silk Organza dress, Royal Emerald & Champagne Gold. The garment features intricate Intricate Zardozi Hand Embroidery. Photographed in a Parisian Haussmannian Balcony at Sunset, high fashion photography style...
+                    </p>
+                    <button onclick="app.copyMasterPrompt()" class="w-full py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] uppercase tracking-wider rounded transition flex items-center justify-center space-x-1">
+                        <i data-lucide="copy" class="w-3 h-3"></i>
+                        <span>Copy Master Template</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col bg-vogue-950 overflow-hidden">
+            
+            <div class="bg-vogue-900 border-b border-gold-500/10 px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+                
+                <div class="flex items-center space-x-6">
+                    <div>
+                        <span class="text-[10px] uppercase font-mono tracking-wider text-zinc-400 block">Total Renders</span>
+                        <span id="stat-total" class="font-serif text-lg font-bold text-zinc-100">100 Assets</span>
+                    </div>
+                    <div class="h-6 w-[1px] bg-zinc-800"></div>
+                    <div>
+                        <span class="text-[10px] uppercase font-mono tracking-wider text-zinc-400 block">Completed</span>
+                        <span id="stat-completed" class="font-serif text-lg font-bold text-gold-400">0 / 100</span>
+                    </div>
+                    <div class="h-6 w-[1px] bg-zinc-800"></div>
+                    <div>
+                        <span class="text-[10px] uppercase font-mono tracking-wider text-zinc-400 block">Status</span>
+                        <span id="stat-status" class="font-mono text-xs text-zinc-300">Ready to synthesize</span>
+                    </div>
+                </div>
+
+                <div class="flex-1 max-w-md mx-4 hidden md:block">
+                    <div class="flex justify-between text-[10px] font-mono text-zinc-400 mb-1">
+                        <span>Batch Progress</span>
+                        <span id="progress-percentage">0%</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                        <div id="progress-bar-fill" class="h-full bg-gold-500 transition-all duration-300 w-0"></div>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <input type="text" id="search-input" oninput="app.filterGrid()" placeholder="Filter by ethnicity..." class="bg-vogue-850 border border-zinc-800 text-xs rounded-md px-3 py-1.5 text-zinc-200 outline-none focus:border-gold-500/50 w-36 sm:w-48">
                     
-                    <div class="space-y-1.5">
-                        <div class="flex justify-between text-xs text-zinc-400">
-                            <span>Generating Neural Mesh</span>
-                            <span id="progressPercent">0%</span>
-                        </div>
-                        <div class="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
-                            <div id="progressBar" class="bg-gradient-to-r from-violet-500 to-blue-500 h-full w-0 transition-all duration-300"></div>
-                        </div>
+                    <select id="filter-status" onchange="app.filterGrid()" class="bg-vogue-850 border border-zinc-800 text-xs rounded-md px-2.5 py-1.5 text-zinc-300 outline-none">
+                        <option value="all">All Status</option>
+                        <option value="ready">Completed</option>
+                        <option value="processing">In Progress</option>
+                        <option value="queued">Queued</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                <div id="gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     </div>
-                </div>
-
-                <div id="resultState" class="hidden space-y-4">
-                    <div class="relative group rounded-2xl overflow-hidden border border-white/10 bg-zinc-900">
-                        <img id="generatedImage" src="" alt="Generated Avatar" class="w-full aspect-square object-cover">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                            <p id="appliedPromptText" class="text-xs text-zinc-200 line-clamp-2"></p>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-2">
-                        <button onclick="downloadHD()" class="py-2.5 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white flex items-center justify-center gap-1.5 transition-all">
-                            <i data-lucide="download" class="w-3.5 h-3.5 text-violet-400"></i> Download HD
-                        </button>
-                        <button onclick="copyCurrentPrompt()" class="py-2.5 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white flex items-center justify-center gap-1.5 transition-all">
-                            <i data-lucide="copy" class="w-3.5 h-3.5 text-blue-400"></i> Copy Prompt
-                        </button>
-                        <button onclick="openModalFromCanvas()" class="py-2.5 px-3 rounded-xl btn-gradient text-xs font-semibold text-white flex items-center justify-center gap-1.5 transition-all">
-                            <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i> Inspect
-                        </button>
-                    </div>
-                </div>
-
             </div>
-        </section>
+        </main>
+    </div>
 
-        <section id="showcase" class="space-y-6 pt-8">
-            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-white/10 pb-4">
-                <div>
-                    <h2 class="text-2xl sm:text-3xl font-bold text-white">Community Showcase</h2>
-                    <p class="text-zinc-400 text-sm">Explore hyper-realistic avatars crafted by creators worldwide.</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button class="px-3 py-1.5 rounded-lg bg-white/10 text-xs font-medium text-white hover:bg-white/20 transition-all">Trending</button>
-                    <button class="px-3 py-1.5 rounded-lg bg-transparent text-xs font-medium text-zinc-400 hover:text-white transition-all">Latest</button>
-                </div>
-            </div>
-
-            <div id="showcaseGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                </div>
-        </section>
-
-    </main>
-
-    <footer class="border-t border-white/10 glass-panel py-8 px-6 text-center text-xs text-zinc-500">
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded-lg btn-gradient flex items-center justify-center">
-                    <i data-lucide="sparkles" class="w-3.5 h-3.5 text-white"></i>
-                </div>
-                <span class="font-bold text-white">PersonaAI</span> &copy; 2026. All rights reserved.
-            </div>
-            <div class="flex gap-6 text-zinc-400">
-                <a href="#" class="hover:text-white">Privacy Policy</a>
-                <a href="#" class="hover:text-white">Terms of Service</a>
-                <a href="#" class="hover:text-white">Community Guidelines</a>
-            </div>
-        </div>
-    </footer>
-
-    <div id="assetModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="glass-panel rounded-3xl max-w-3xl w-full p-6 border border-white/20 relative space-y-6 max-h-[90vh] overflow-y-auto">
-            <button onclick="closeModal()" class="absolute top-4 right-4 p-2 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-all">
+    <div id="preview-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl hidden flex items-center justify-center p-4 sm:p-6">
+        <div class="relative max-w-5xl w-full bg-vogue-900 border border-gold-500/30 rounded-xl overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[90vh]">
+            
+            <button onclick="app.closeModal()" class="absolute top-4 right-4 z-10 w-9 h-9 bg-black/60 hover:bg-black border border-white/20 text-white rounded-full flex items-center justify-center transition">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
 
-            <div class="grid md:grid-cols-2 gap-6 items-center">
-                <div class="rounded-2xl overflow-hidden bg-zinc-900 border border-white/10">
-                    <img id="modalImg" src="" class="w-full aspect-square object-cover" alt="Modal Avatar">
+            <div class="md:w-3/5 bg-black flex items-center justify-center relative min-h-[350px] md:min-h-[550px]">
+                <img id="modal-image" src="" alt="Avatar Detail" class="w-full h-full object-cover">
+                <video id="modal-video" src="" autoplay loop muted playsinline class="w-full h-full object-cover hidden"></video>
+                
+                <div class="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded border border-gold-500/30 flex items-center space-x-2 text-xs">
+                    <i data-lucide="film" class="w-4 h-4 text-gold-400"></i>
+                    <span class="text-gold-200 font-mono">10-Sec 60fps Motion Preview</span>
                 </div>
+            </div>
 
+            <div class="md:w-2/5 p-6 flex flex-col justify-between space-y-6 overflow-y-auto custom-scrollbar">
                 <div class="space-y-4">
                     <div>
-                        <span class="text-xs font-semibold text-violet-400 uppercase tracking-wider">Avatar Details</span>
-                        <h3 id="modalTitle" class="text-lg font-bold text-white mt-1">Hyper-Realistic Portrait</h3>
+                        <span id="modal-badge" class="inline-block px-2.5 py-1 bg-gold-500/10 border border-gold-500/30 text-gold-400 font-mono text-[10px] tracking-widest uppercase rounded mb-2">
+                            REGION PROFILE
+                        </span>
+                        <h2 id="modal-title" class="font-serif text-2xl font-bold text-zinc-100">Ethnicity Name</h2>
+                        <p id="modal-subtitle" class="text-xs text-zinc-400">Editorial Fashion Portrait & Motion Synthesis</p>
                     </div>
 
-                    <div class="space-y-2">
-                        <label class="text-xs text-zinc-400 font-medium">Full Generation Prompt</label>
-                        <p id="modalPrompt" class="text-xs text-zinc-200 bg-zinc-900/90 p-3 rounded-xl border border-white/10 leading-relaxed max-h-32 overflow-y-auto"></p>
+                    <div class="border-t border-zinc-800 pt-4 space-y-3">
+                        <h4 class="text-xs font-mono text-gold-400 uppercase tracking-wider">GENERATED PROMPT SPECS</h4>
+                        <div class="bg-vogue-850 p-3 rounded-md border border-zinc-800 text-xs font-mono text-zinc-300 leading-relaxed max-h-48 overflow-y-auto custom-scrollbar" id="modal-prompt">
+                            </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-2 text-xs">
-                        <div class="bg-zinc-900/60 p-2.5 rounded-xl border border-white/5">
-                            <span class="text-zinc-500 block">Lens Simulation</span>
-                            <span class="text-zinc-200 font-medium">Hasselblad 85mm f/1.4</span>
+                    <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                        <div class="bg-vogue-850 p-2 rounded border border-zinc-800/60">
+                            <span class="text-zinc-500 block">CAMERA LENS</span>
+                            <span class="text-zinc-300">85mm f/1.4 Cinema</span>
                         </div>
-                        <div class="bg-zinc-900/60 p-2.5 rounded-xl border border-white/5">
-                            <span class="text-zinc-500 block">Lighting</span>
-                            <span class="text-zinc-200 font-medium">Volumetric Studio Rim</span>
+                        <div class="bg-vogue-850 p-2 rounded border border-zinc-800/60">
+                            <span class="text-zinc-500 block">RESOLUTION</span>
+                            <span class="text-zinc-300">8K Ultra-Photorealistic</span>
                         </div>
                     </div>
+                </div>
 
-                    <div class="pt-2 flex flex-col gap-2">
-                        <button onclick="remixFromModal()" class="w-full py-3 rounded-xl btn-gradient text-xs font-bold text-white flex items-center justify-center gap-2">
-                            <i data-lucide="repeat" class="w-4 h-4"></i> Remix This Avatar
-                        </button>
-                        <button onclick="downloadHD()" class="w-full py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white flex items-center justify-center gap-2">
-                            <i data-lucide="download" class="w-4 h-4"></i> Download High-Res (8K)
-                        </button>
-                    </div>
+                <div class="space-y-2 pt-4 border-t border-zinc-800">
+                    <button id="modal-download-btn" onclick="app.downloadCurrentModalAsset()" class="w-full gold-gradient-btn py-2.5 text-vogue-950 font-bold text-xs uppercase tracking-wider rounded-md flex items-center justify-center space-x-2 shadow-lg">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span>Download High-Res Package</span>
+                    </button>
+                    <button onclick="app.copyModalPrompt()" class="w-full bg-vogue-850 hover:bg-zinc-800 text-zinc-300 py-2.5 border border-zinc-700 text-xs uppercase tracking-wider rounded-md flex items-center justify-center space-x-2 transition">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                        <span>Copy Specific Prompt</span>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 glass-panel px-4 py-3 rounded-xl border border-violet-500/30 text-xs font-medium text-white flex items-center gap-2 shadow-2xl">
-        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
-        <span id="toastMsg">Action completed successfully</span>
-    </div>
-
     <script>
-        // Lucide Icons Initialization
-        lucide.createIcons();
-
-        // State Variables
-        let isMagicActive = false;
-        let selectedStyle = '';
-        let currentAspectRatio = '1:1';
-        let currentGeneratedUrl = '';
-        let currentPromptText = '';
-
-        // Animated Cycling Placeholders
-        const cyclingPrompts = [
-            "30-year-old Japanese architect in a rain-slicked street, 85mm portrait...",
-            "Elderly French woodworker with warm morning light filtering into studio...",
-            "Editorial fashion model in Tokyo neon night, dynamic angle, dramatic shadows...",
-            "Cyberpunk engineer with subtle optic implants, cinematic volumetric lighting...",
-            "Raw portrait of a Scandinavian sailor, realistic skin texture, natural pores..."
+        /**
+         * Global Vogue AI - Core Application Architecture
+         */
+        
+        // 100 Worldwide Distinct Ethnicities / Regions
+        const ETHNICITIES_100 = [
+            "Japanese (Tokyo)", "Nigerian (Lagos)", "French (Paris)", "Indian (Mumbai)", "Brazilian (Rio)",
+            "Swedish (Stockholm)", "South Korean (Seoul)", "Egyptian (Cairo)", "Italian (Florence)", "Mexican (Oaxaca)",
+            "Ethiopian (Addis Ababa)", "Kenyan (Nairobi)", "Moroccan (Marrakech)", "Greek (Athens)", "Spanish (Andalusia)",
+            "Thai (Bangkok)", "Vietnamese (Hanoi)", "Filipina (Manila)", "Indonesian (Bali)", "Chinese (Shanghai)",
+            "Persian (Tehran)", "Turkish (Istanbul)", "Lebanese (Beirut)", "Jamaican (Kingston)", "Colombian (Cartagena)",
+            "Peruvian (Cusco)", "Argentine (Buenos Aires)", "Russian (St. Petersburg)", "Polish (Warsaw)", "Ukrainian (Kyiv)",
+            "Senegalese (Dakar)", "Ghanaian (Accra)", "South African (Cape Town)", "Icelandic (Reykjavik)", "Norwegian (Oslo)",
+            "Danish (Copenhagen)", "Finnish (Helsinki)", "Scottish (Highlands)", "Irish (Galway)", "Portuguese (Lisbon)",
+            "Mongolian (Ulaanbaatar)", "Tibetan (Lhasa)", "Kazakh (Almaty)", "Uzbek (Samarkand)", "Samoan (Apia)",
+            "Maori (New Zealand)", "Hawaiian (Honolulu)", "Fijian (Suva)", "Tahitian (Papeete)", "Cuban (Havana)",
+            "Afro-Latina (Dominican Rep)", "Puerto Rican (San Juan)", "Venezuelan (Caracas)", "Chilean (Atacama)", "Bolivian (La Paz)",
+            "Ecuadorian (Quito)", "Algerian (Algiers)", "Tunisian (Tunis)", "Ivorian (Abidjan)", "Cameroonian (Douala)",
+            "Angolan (Luanda)", "Tanzanian (Zanzibar)", "Ugandan (Kampala)", "Rwandan (Kigali)", "Malagasy (Madagascar)",
+            "Jordanian (Petra)", "Omani (Muscat)", "Emirati (Dubai)", "Saudi (AlUla)", "Kurdish (Erbil)",
+            "Armenian (Yerevan)", "Georgian (Tbilisi)", "Azerbaijani (Baku)", "Pakistani (Lahore)", "Bangladeshi (Dhaka)",
+            "Sri Lankan (Kandy)", "Nepali (Kathmandu font-mono)", "Burmese (Bagan)", "Khmer (Siem Reap)", "Laotian (Luang Prabang)",
+            "Austrian (Vienna)", "Czech (Prague)", "Hungarian (Budapest)", "Romanian (Transylvania)", "Bulgarian (Sofia font-mono)",
+            "Serbian (Belgrade)", "Croatian (Dubrovnik font-mono)", "Dutch (Amsterdam)", "Belgian (Bruges)", "Swiss (Zurich)",
+            "Inuit (Nuuk)", "Navajo Nation (Arizona)", "Guatemalan (Antigua)", "Panamanian (San Blas)", "Trinidadian (Port of Spain)",
+            "Haitian (Port-au-Prince)", "Barbadian (Bridgetown font-mono)", "Belizean (Belmopan)", "Aboriginal Australian (Arnhem)", "Maltese (Valletta)"
         ];
 
-        let placeholderIdx = 0;
-        const promptInput = document.getElementById('promptInput');
-
-        setInterval(() => {
-            if (!document.activeElement === promptInput && promptInput.value === '') {
-                placeholderIdx = (placeholderIdx + 1) % cyclingPrompts.length;
-                promptInput.setAttribute('placeholder', cyclingPrompts[placeholderIdx]);
-            }
-        }, 4000);
-
-        // Community Showcase Pre-generated Data
-        const showcaseData = [
-            {
-                img: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
-                prompt: '24-year-old Parisian female model, natural freckles, volumetric soft window light, shot on 85mm lens, raw photo texture.',
-                author: '@alex_design'
-            },
-            {
-                img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
-                prompt: '35-year-old Scandinavian tech founder, subtle beard trim, rim lighting, dramatic studio background, ultra-sharp detail.',
-                author: '@synth_art'
-            },
-            {
-                img: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
-                prompt: 'Editorial portrait of young woman in neon urban rain, cinematic reflection in eyes, Hasselblad X2D quality.',
-                author: '@lens_master'
-            },
-            {
-                img: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=800&q=80',
-                prompt: 'Vintage 35mm film aesthetic, young man in oversized coat, natural grain, golden hour sunset light, authentic skin tones.',
-                author: '@retro_ai'
-            },
-            {
-                img: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80',
-                prompt: 'High fashion portrait, vibrant studio backdrop, subsurface scattering skin details, catchlight in dark brown eyes.',
-                author: '@vogue_gen'
-            },
-            {
-                img: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80',
-                prompt: 'Elderly artist with serene expression, deep character lines, warm side lighting, raw photography style.',
-                author: '@human_story'
-            }
+        // High Fashion Editorial Stock Images & Motion Video Visualizer Clones
+        const EDITORIAL_PHOTOS = [
+            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80",
+            "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80",
+            "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80",
+            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80",
+            "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=800&q=80",
+            "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=800&q=80",
+            "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=800&q=80",
+            "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=800&q=80"
         ];
 
-        // Populate Showcase Grid
-        const showcaseGrid = document.getElementById('showcaseGrid');
-        function renderShowcase() {
-            showcaseGrid.innerHTML = showcaseData.map((item, index) => `
-                <div class="glass-panel glass-panel-interactive rounded-2xl overflow-hidden group relative flex flex-col">
-                    <div class="relative aspect-square overflow-hidden bg-zinc-900">
-                        <img src="${item.img}" alt="Avatar Showcase" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 flex flex-col justify-end gap-2">
-                            <p class="text-xs text-zinc-200 line-clamp-3 font-normal">${item.prompt}</p>
-                            <div class="flex items-center justify-between pt-2 border-t border-white/10">
-                                <span class="text-[10px] text-zinc-400">${item.author}</span>
-                                <button onclick="remixPrompt('${item.prompt.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-lg btn-gradient text-[11px] font-semibold text-white flex items-center gap-1 shadow">
-                                    <i data-lucide="repeat" class="w-3 h-3"></i> Remix
+        // Sample Editorial Fashion Motion Loops (Royalty-free high quality MP4)
+        const EDITORIAL_VIDEOS = [
+            "https://assets.mixkit.co/videos/preview/mixkit-fashion-model-in-a-green-dress-41133-large.mp4",
+            "https://assets.mixkit.co/videos/preview/mixkit-model-posing-in-a-futuristic-outfit-41235-large.mp4",
+            "https://assets.mixkit.co/videos/preview/mixkit-woman-posing-for-the-camera-in-a-studio-41581-large.mp4",
+            "https://assets.mixkit.co/videos/preview/mixkit-model-walking-on-a-runway-41233-large.mp4"
+        ];
+
+        class GlobalVogueApp {
+            constructor() {
+                this.items = [];
+                this.concurrencyLimit = 5;
+                this.activeWorkers = 0;
+                this.isGenerating = false;
+                this.apiMode = 'mock'; // 'mock' or 'live'
+                this.selectedModalItem = null;
+
+                // Default Parameters
+                this.parameters = {
+                    fabric: 'Organza',
+                    palette: 'Royal Emerald & Gold',
+                    pattern: 'Intricate Zardozi Embroidery',
+                    backdrop: 'Paris Haussmannian Balcony'
+                };
+
+                this.init();
+            }
+
+            init() {
+                this.loadSavedState();
+                this.generateInitialItemData();
+                this.renderGrid();
+                this.updateStats();
+                this.updatePromptPreview();
+                
+                // Initialize Lucide icons
+                lucide.createIcons();
+            }
+
+            loadSavedState() {
+                const savedParams = localStorage.getItem('vogue_params');
+                if (savedParams) {
+                    try {
+                        this.parameters = JSON.parse(savedParams);
+                        document.getElementById('param-fabric').value = this.parameters.fabric;
+                        document.getElementById('param-palette').value = this.parameters.palette;
+                        document.getElementById('param-pattern').value = this.parameters.pattern;
+                        document.getElementById('param-backdrop').value = this.parameters.backdrop;
+                    } catch(e) { console.error("Failed to restore parameters", e); }
+                }
+            }
+
+            saveState() {
+                localStorage.setItem('vogue_params', JSON.stringify(this.parameters));
+            }
+
+            generateInitialItemData() {
+                this.items = ETHNICITIES_100.map((ethnicity, index) => {
+                    const prompt = this.constructPrompt(ethnicity);
+                    const photoSample = EDITORIAL_PHOTOS[index % EDITORIAL_PHOTOS.length];
+                    const videoSample = EDITORIAL_VIDEOS[index % EDITORIAL_VIDEOS.length];
+
+                    return {
+                        id: index + 1,
+                        ethnicity: ethnicity,
+                        prompt: prompt,
+                        status: 'idle', // 'idle', 'queued', 'rendering', 'ready', 'error'
+                        progress: 0,
+                        imageUrl: photoSample,
+                        videoUrl: videoSample,
+                        timestamp: null
+                    };
+                });
+            }
+
+            constructPrompt(ethnicity) {
+                return `Full-body fashion editorial portrait of a beautiful ${ethnicity} woman draped in a ${this.parameters.fabric} dress, ${this.parameters.palette}. The garment features intricate ${this.parameters.pattern}. Photographed in a ${this.parameters.backdrop}, high fashion photography style, cinematic lighting, dramatic depth of field, captured on an 85mm lens, f/1.4, rich textile textures, photorealistic, 8k resolution.`;
+            }
+
+            updateParameters() {
+                this.parameters.fabric = document.getElementById('param-fabric').value;
+                this.parameters.palette = document.getElementById('param-palette').value;
+                this.parameters.pattern = document.getElementById('param-pattern').value;
+                this.parameters.backdrop = document.getElementById('param-backdrop').value;
+
+                this.saveState();
+                this.updatePromptPreview();
+
+                // Re-inject prompts for non-completed items
+                this.items.forEach(item => {
+                    if (item.status !== 'ready') {
+                        item.prompt = this.constructPrompt(item.ethnicity);
+                    }
+                });
+
+                this.renderGrid();
+            }
+
+            updatePromptPreview() {
+                const samplePrompt = this.constructPrompt("[Ethnicity/Region]");
+                document.getElementById('prompt-preview').innerText = samplePrompt;
+            }
+
+            setApiMode(mode) {
+                this.apiMode = mode;
+                const mockBtn = document.getElementById('mode-mock-btn');
+                const liveBtn = document.getElementById('mode-live-btn');
+                const liveSettings = document.getElementById('live-api-settings');
+
+                if (mode === 'mock') {
+                    mockBtn.className = "px-2.5 py-1 rounded text-[11px] font-semibold bg-gold-500 text-vogue-950";
+                    liveBtn.className = "px-2.5 py-1 rounded text-[11px] font-semibold text-zinc-400 hover:text-zinc-200";
+                    liveSettings.classList.add('hidden');
+                } else {
+                    liveBtn.className = "px-2.5 py-1 rounded text-[11px] font-semibold bg-gold-500 text-vogue-950";
+                    mockBtn.className = "px-2.5 py-1 rounded text-[11px] font-semibold text-zinc-400 hover:text-zinc-200";
+                    liveSettings.classList.remove('hidden');
+                }
+            }
+
+            // BATCH GENERATION ORCHESTRATION ENGINE
+            async startBatchGeneration() {
+                if (this.isGenerating) return;
+
+                this.isGenerating = true;
+                this.updateQueueBadge(true, "Batch Processing");
+
+                // Mark all idle/unready items as queued
+                this.items.forEach(item => {
+                    if (item.status !== 'ready') {
+                        item.status = 'queued';
+                        item.progress = 0;
+                    }
+                });
+
+                this.renderGrid();
+                this.processQueue();
+            }
+
+            async processQueue() {
+                const queuedItems = this.items.filter(i => i.status === 'queued');
+
+                if (queuedItems.length === 0 && this.activeWorkers === 0) {
+                    this.isGenerating = false;
+                    this.updateQueueBadge(false, "Batch Complete");
+                    this.updateStats();
+                    return;
+                }
+
+                while (this.activeWorkers < this.concurrencyLimit) {
+                    const nextItem = this.items.find(i => i.status === 'queued');
+                    if (!nextItem) break;
+
+                    this.activeWorkers++;
+                    nextItem.status = 'rendering';
+                    this.renderCard(nextItem.id);
+                    
+                    // Fire asynchronous worker stream
+                    this.processItem(nextItem).then(() => {
+                        this.activeWorkers--;
+                        this.updateStats();
+                        this.processQueue();
+                    });
+                }
+            }
+
+            async processItem(item) {
+                return new Promise((resolve) => {
+                    if (this.apiMode === 'mock') {
+                        let step = 0;
+                        const interval = setInterval(() => {
+                            step += Math.floor(Math.random() * 15) + 10;
+                            item.progress = Math.min(step, 100);
+
+                            this.updateCardProgress(item);
+
+                            if (step >= 100) {
+                                clearInterval(interval);
+                                item.status = 'ready';
+                                item.timestamp = new Date().toISOString();
+                                this.renderCard(item.id);
+                                resolve();
+                            }
+                        }, 300);
+                    } else {
+                        // Simulated Live Endpoint Trigger
+                        setTimeout(() => {
+                            item.progress = 100;
+                            item.status = 'ready';
+                            item.timestamp = new Date().toISOString();
+                            this.renderCard(item.id);
+                            resolve();
+                        }, 2500);
+                    }
+                });
+            }
+
+            updateQueueBadge(active, text) {
+                const badge = document.getElementById('queue-status-badge');
+                const dotPing = document.getElementById('queue-dot-ping');
+                const dot = document.getElementById('queue-dot');
+                const queueText = document.getElementById('queue-text');
+
+                queueText.innerText = text;
+
+                if (active) {
+                    dotPing.classList.remove('hidden');
+                    dot.className = "relative inline-flex rounded-full h-2 w-2 bg-gold-400";
+                    badge.className = "flex items-center space-x-2 bg-gold-500/10 border border-gold-500/30 px-3 py-1.5 rounded-full text-xs font-mono text-gold-300 animate-pulse";
+                } else {
+                    dotPing.classList.add('hidden');
+                    dot.className = "relative inline-flex rounded-full h-2 w-2 bg-zinc-500";
+                    badge.className = "flex items-center space-x-2 bg-vogue-850 border border-zinc-800 px-3 py-1.5 rounded-full text-xs font-mono text-zinc-300";
+                }
+            }
+
+            updateStats() {
+                const readyCount = this.items.filter(i => i.status === 'ready').length;
+                const percentage = Math.round((readyCount / this.items.length) * 100);
+
+                document.getElementById('stat-completed').innerText = `${readyCount} / 100`;
+                document.getElementById('progress-percentage').innerText = `${percentage}%`;
+                document.getElementById('progress-bar-fill').style.width = `${percentage}%`;
+
+                const statStatus = document.getElementById('stat-status');
+                if (this.isGenerating) {
+                    statStatus.innerText = `Rendering (${this.activeWorkers} Streams Active)`;
+                    statStatus.className = "font-mono text-xs text-gold-400";
+                } else if (readyCount === 100) {
+                    statStatus.innerText = "All 100 Assets Synthesized";
+                    statStatus.className = "font-mono text-xs text-emerald-400";
+                } else {
+                    statStatus.innerText = "Ready to synthesize";
+                    statStatus.className = "font-mono text-xs text-zinc-400";
+                }
+            }
+
+            // MASONRY / RESPONSIVE GRID RENDERER
+            renderGrid() {
+                const container = document.getElementById('gallery-grid');
+                container.innerHTML = '';
+
+                const filterVal = document.getElementById('filter-status').value;
+                const searchVal = document.getElementById('search-input').value.toLowerCase();
+
+                const filtered = this.items.filter(item => {
+                    const matchesStatus = filterVal === 'all' || 
+                        (filterVal === 'ready' && item.status === 'ready') ||
+                        (filterVal === 'processing' && item.status === 'rendering') ||
+                        (filterVal === 'queued' && item.status === 'queued');
+
+                    const matchesSearch = item.ethnicity.toLowerCase().includes(searchVal);
+                    return matchesStatus && matchesSearch;
+                });
+
+                filtered.forEach(item => {
+                    const card = this.createCardElement(item);
+                    container.appendChild(card);
+                });
+
+                lucide.createIcons();
+            }
+
+            createCardElement(item) {
+                const card = document.createElement('div');
+                card.id = `avatar-card-${item.id}`;
+                card.className = "glass-card glass-card-hover rounded-xl overflow-hidden flex flex-col relative group";
+
+                let statusBadgeHTML = '';
+                if (item.status === 'ready') {
+                    statusBadgeHTML = `<span class="bg-black/60 backdrop-blur-md border border-gold-500/40 text-gold-400 text-[10px] font-mono px-2 py-0.5 rounded flex items-center space-x-1"><i data-lucide="check-circle" class="w-3 h-3 text-gold-400"></i><span>10S VIDEO</span></span>`;
+                } else if (item.status === 'rendering') {
+                    statusBadgeHTML = `<span class="bg-gold-500/20 backdrop-blur-md border border-gold-500/50 text-gold-300 text-[10px] font-mono px-2 py-0.5 rounded flex items-center space-x-1 animate-pulse"><i data-lucide="loader" class="w-3 h-3 animate-spin"></i><span>${item.progress}%</span></span>`;
+                } else if (item.status === 'queued') {
+                    statusBadgeHTML = `<span class="bg-zinc-800/80 backdrop-blur-md text-zinc-400 text-[10px] font-mono px-2 py-0.5 rounded">QUEUED</span>`;
+                } else {
+                    statusBadgeHTML = `<span class="bg-zinc-900/80 backdrop-blur-md text-zinc-500 text-[10px] font-mono px-2 py-0.5 rounded">IDLE</span>`;
+                }
+
+                card.innerHTML = `
+                    <div class="relative aspect-[3/4] w-full bg-vogue-950 overflow-hidden cursor-pointer" onclick="app.openModal(${item.id})">
+                        <img src="${item.imageUrl}" alt="${item.ethnicity}" class="w-full h-full object-cover transition duration-700 group-hover:scale-105 ${item.status !== 'ready' ? 'brightness-50 grayscale-[40%]' : ''}">
+                        
+                        ${item.status === 'ready' ? `
+                            <video src="${item.videoUrl}" loop muted playsinline class="video-preview absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500"></video>
+                        ` : ''}
+
+                        ${item.status === 'rendering' ? `
+                            <div class="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center">
+                                <div class="w-12 h-12 rounded-full border-2 border-gold-500/20 border-t-gold-500 animate-spin mb-3"></div>
+                                <span class="text-xs font-mono text-gold-300">Synthesizing Asset...</span>
+                                <div class="w-full bg-zinc-800 h-1 rounded-full mt-3 overflow-hidden max-w-[120px]">
+                                    <div class="bg-gold-500 h-full transition-all duration-200" style="width: ${item.progress}%"></div>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <div class="absolute top-3 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
+                            <span class="bg-black/70 backdrop-blur-md border border-white/10 text-white font-mono text-[10px] px-2 py-0.5 rounded">#${String(item.id).padStart(3, '0')}</span>
+                            ${statusBadgeHTML}
+                        </div>
+
+                        <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 flex items-end justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                            <div>
+                                <h3 class="font-serif text-sm font-bold text-white tracking-wide">${item.ethnicity}</h3>
+                                <p class="text-[10px] text-gold-300/80 font-mono">8K Editorial Avatar</p>
+                            </div>
+                            <div class="flex items-center space-x-1" onclick="event.stopPropagation()">
+                                <button onclick="app.copySinglePrompt(${item.id})" class="p-2 bg-black/60 hover:bg-gold-500 hover:text-vogue-950 text-white rounded-md border border-white/20 transition" title="Copy Prompt">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button onclick="app.downloadSingleAsset(${item.id})" class="p-2 bg-black/60 hover:bg-gold-500 hover:text-vogue-950 text-white rounded-md border border-white/20 transition" title="Download">
+                                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
-                </div>
-            `).join('');
-            lucide.createIcons();
-        }
-        renderShowcase();
+                `;
 
-        // Magic Prompt Enhancer Toggle
-        function toggleMagicEnhancer() {
-            isMagicActive = !isMagicActive;
-            const badge = document.getElementById('magicBadge');
-            const btn = document.getElementById('magicEnhancerBtn');
-
-            if (isMagicActive) {
-                badge.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
-                btn.classList.add('border-violet-500/50', 'bg-violet-500/20', 'text-violet-200');
-                showToast('Magic Prompt Enhancer Activated');
-            } else {
-                badge.className = 'w-2 h-2 rounded-full bg-zinc-500';
-                btn.classList.remove('border-violet-500/50', 'bg-violet-500/20', 'text-violet-200');
-                showToast('Magic Enhancer Deactivated');
-            }
-        }
-
-        // Quick Pill Selection
-        function selectStyle(btnElement, styleName) {
-            document.querySelectorAll('.style-pill').forEach(el => {
-                el.classList.remove('bg-violet-600', 'text-white', 'border-violet-400');
-                el.classList.add('glass-panel', 'text-zinc-300');
-            });
-
-            if (selectedStyle === styleName) {
-                selectedStyle = '';
-            } else {
-                selectedStyle = styleName;
-                btnElement.classList.remove('glass-panel', 'text-zinc-300');
-                btnElement.classList.add('bg-violet-600', 'text-white', 'border-violet-400');
-            }
-        }
-
-        // Aspect Ratio Selector
-        function setAspectRatio(btnElement, ratio) {
-            document.querySelectorAll('.aspect-btn').forEach(el => {
-                el.classList.remove('bg-violet-600', 'text-white');
-                el.classList.add('text-zinc-400');
-            });
-            btnElement.classList.remove('text-zinc-400');
-            btnElement.classList.add('bg-violet-600', 'text-white');
-            currentAspectRatio = ratio;
-        }
-
-        // Avatar Generation Process Simulation
-        function generateAvatar() {
-            let userPrompt = promptInput.value.trim();
-            if (!userPrompt) {
-                userPrompt = promptInput.getAttribute('placeholder') || "Photorealistic human portrait";
-                promptInput.value = userPrompt;
-            }
-
-            // Append Magic Modifiers if active
-            if (isMagicActive) {
-                userPrompt += ", subsurface skin scattering, volumetric studio rim light, Hasselblad X2D 100C, natural skin pores, 8k raw detail";
-            }
-            if (selectedStyle) {
-                userPrompt += `, ${selectedStyle} visual tone`;
-            }
-
-            currentPromptText = userPrompt;
-
-            // Display Canvas Section
-            const canvasSection = document.getElementById('canvasSection');
-            const loadingState = document.getElementById('loadingState');
-            const resultState = document.getElementById('resultState');
-            const progressBar = document.getElementById('progressBar');
-            const progressPercent = document.getElementById('progressPercent');
-            const microStepText = document.getElementById('microStepText');
-
-            canvasSection.classList.remove('hidden');
-            loadingState.classList.remove('hidden');
-            resultState.classList.add('hidden');
-            
-            // Scroll smoothly to generator canvas
-            canvasSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-            // Micro steps updates
-            const microSteps = [
-                { percent: 15, text: 'Constructing 3D facial mesh...' },
-                { percent: 35, text: 'Simulating subsurface skin scattering...' },
-                { percent: 65, text: 'Balancing volumetric lighting & iris reflections...' },
-                { percent: 85, text: 'Applying realistic epidermal porosity...' },
-                { percent: 100, text: 'Finalizing 8K raw render...' }
-            ];
-
-            let stepIdx = 0;
-            progressBar.style.width = '0%';
-            progressPercent.innerText = '0%';
-
-            const interval = setInterval(() => {
-                if (stepIdx < microSteps.length) {
-                    const step = microSteps[stepIdx];
-                    progressBar.style.width = `${step.percent}%`;
-                    progressPercent.innerText = `${step.percent}%`;
-                    microStepText.innerText = step.text;
-                    stepIdx++;
-                } else {
-                    clearInterval(interval);
-                    finishGeneration();
+                // Add Hover Listeners for Video Playback
+                if (item.status === 'ready') {
+                    const videoEl = card.querySelector('.video-preview');
+                    if (videoEl) {
+                        card.addEventListener('mouseenter', () => videoEl.play().catch(() => {}));
+                        card.addEventListener('mouseleave', () => {
+                            videoEl.pause();
+                            videoEl.currentTime = 0;
+                        });
+                    }
                 }
-            }, 700);
+
+                return card;
+            }
+
+            renderCard(id) {
+                const existingCard = document.getElementById(`avatar-card-${id}`);
+                const item = this.items.find(i => i.id === id);
+                if (existingCard && item) {
+                    const newCard = this.createCardElement(item);
+                    existingCard.replaceWith(newCard);
+                    lucide.createIcons();
+                }
+            }
+
+            updateCardProgress(item) {
+                const card = document.getElementById(`avatar-card-${item.id}`);
+                if (card) {
+                    const progressFill = card.querySelector('.bg-gold-500.h-full');
+                    if (progressFill) {
+                        progressFill.style.width = `${item.progress}%`;
+                    }
+                }
+            }
+
+            filterGrid() {
+                this.renderGrid();
+            }
+
+            // MODAL HANDLING
+            openModal(id) {
+                const item = this.items.find(i => i.id === id);
+                if (!item) return;
+
+                this.selectedModalItem = item;
+
+                document.getElementById('modal-title').innerText = item.ethnicity;
+                document.getElementById('modal-prompt').innerText = item.prompt;
+                document.getElementById('modal-badge').innerText = `PROFILE NO. #${String(item.id).padStart(3, '0')}`;
+
+                const modalImg = document.getElementById('modal-image');
+                const modalVid = document.getElementById('modal-video');
+
+                modalImg.src = item.imageUrl;
+
+                if (item.status === 'ready') {
+                    modalVid.src = item.videoUrl;
+                    modalVid.classList.remove('hidden');
+                } else {
+                    modalVid.classList.add('hidden');
+                }
+
+                document.getElementById('preview-modal').classList.remove('hidden');
+                lucide.createIcons();
+            }
+
+            closeModal() {
+                const modalVid = document.getElementById('modal-video');
+                modalVid.pause();
+                document.getElementById('preview-modal').classList.add('hidden');
+                this.selectedModalItem = null;
+            }
+
+            // EXPORT & COPIERS
+            copyMasterPrompt() {
+                const samplePrompt = this.constructPrompt("[Ethnicity/Region]");
+                navigator.clipboard.writeText(samplePrompt);
+                this.showToast("Master Prompt template copied to clipboard!");
+            }
+
+            copySinglePrompt(id) {
+                const item = this.items.find(i => i.id === id);
+                if (item) {
+                    navigator.clipboard.writeText(item.prompt);
+                    this.showToast(`Prompt for ${item.ethnicity} copied!`);
+                }
+            }
+
+            copyModalPrompt() {
+                if (this.selectedModalItem) {
+                    navigator.clipboard.writeText(this.selectedModalItem.prompt);
+                    this.showToast("Prompt copied to clipboard!");
+                }
+            }
+
+            downloadSingleAsset(id) {
+                const item = this.items.find(i => i.id === id);
+                if (!item) return;
+
+                const link = document.createElement('a');
+                link.href = item.imageUrl;
+                link.download = `VogueAI_${item.ethnicity.replace(/[^a-zA-Z0-9]/g, '_')}_8K.jpg`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                this.showToast(`Downloading high-res portrait package for ${item.ethnicity}...`);
+            }
+
+            downloadCurrentModalAsset() {
+                if (this.selectedModalItem) {
+                    this.downloadSingleAsset(this.selectedModalItem.id);
+                }
+            }
+
+            async exportAllAssets() {
+                const completedItems = this.items.filter(i => i.status === 'ready');
+                
+                if (completedItems.length === 0) {
+                    alert("No completed assets available to export. Click 'Batch Generate 100' first!");
+                    return;
+                }
+
+                this.showToast("Preparing ZIP Archive containing metadata and media...");
+
+                const zip = new JSZip();
+                const folder = zip.folder("Global_Vogue_AI_Assets");
+
+                // Manifest File
+                const manifest = completedItems.map(item => ({
+                    id: item.id,
+                    ethnicity: item.ethnicity,
+                    prompt: item.prompt,
+                    image_url: item.imageUrl,
+                    video_url: item.videoUrl,
+                    generated_at: item.timestamp
+                }));
+
+                folder.file("manifest.json", JSON.stringify(manifest, null, 2));
+
+                // Add Prompts Text File
+                let promptsTxt = "GLOBAL VOGUE AI - 100 EDITORIAL PROMPTS ARCHIVE\n\n";
+                completedItems.forEach(item => {
+                    promptsTxt += `[#${item.id}] ${item.ethnicity}\nPrompt: ${item.prompt}\n\n`;
+                });
+                folder.file("prompts_archive.txt", promptsTxt);
+
+                // Generate ZIP File Blob
+                const content = await zip.generateAsync({ type: "blob" });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(content);
+                a.download = `Global_Vogue_AI_Batch_Export_${Date.now()}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                this.showToast("Export archive downloaded successfully!");
+            }
+
+            showToast(message) {
+                const toast = document.createElement('div');
+                toast.className = "fixed bottom-6 right-6 z-50 bg-gold-500 text-vogue-950 font-bold px-4 py-2.5 rounded-lg shadow-2xl text-xs uppercase tracking-wider flex items-center space-x-2 animate-bounce";
+                toast.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>${message}</span>`;
+                document.body.appendChild(toast);
+                lucide.createIcons();
+
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            }
         }
 
-        function finishGeneration() {
-            const loadingState = document.getElementById('loadingState');
-            const resultState = document.getElementById('resultState');
-            const generatedImage = document.getElementById('generatedImage');
-            const appliedPromptText = document.getElementById('appliedPromptText');
-
-            // Pick dynamic avatar image based on showcase pool or high-res Unsplash photos
-            const pool = [
-                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1000&q=80',
-                'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=1000&q=80',
-                'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1000&q=80',
-                'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=1000&q=80'
-            ];
-            
-            currentGeneratedUrl = pool[Math.floor(Math.random() * pool.length)];
-            generatedImage.src = currentGeneratedUrl;
-            appliedPromptText.innerText = currentPromptText;
-
-            loadingState.classList.add('hidden');
-            resultState.classList.remove('hidden');
-
-            showToast('Avatar generated successfully!');
-        }
-
-        // Remix Prompt Functionality
-        function remixPrompt(promptText) {
-            promptInput.value = promptText;
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            promptInput.focus();
-            showToast('Prompt copied to generator!');
-        }
-
-        // Toast Notification System
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toastMsg');
-            toastMsg.innerText = message;
-
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            toast.classList.add('translate-y-0', 'opacity-100');
-
-            setTimeout(() => {
-                toast.classList.remove('translate-y-0', 'opacity-100');
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
-        }
-
-        // Modal Logic
-        function openModalFromCanvas() {
-            const modal = document.getElementById('assetModal');
-            document.getElementById('modalImg').src = currentGeneratedUrl;
-            document.getElementById('modalPrompt').innerText = currentPromptText;
-            modal.classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('assetModal').classList.add('hidden');
-        }
-
-        function remixFromModal() {
-            closeModal();
-            remixPrompt(currentPromptText);
-        }
-
-        function downloadHD() {
-            showToast('Preparing 8K Ultra-HD Download...');
-        }
-
-        function copyCurrentPrompt() {
-            navigator.clipboard.writeText(currentPromptText);
-            showToast('Prompt copied to clipboard!');
-        }
+        // Initialize App Instance Global Scope
+        let app;
+        window.addEventListener('DOMContentLoaded', () => {
+            app = new GlobalVogueApp();
+        });
     </script>
 </body>
 </html>
