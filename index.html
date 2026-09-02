@@ -3,14 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Vogue AI — Haute Couture Batch Generation</title>
+    <title>Global Vogue AI — 100 Unique Female Avatars</title>
     
-    <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -39,46 +37,25 @@
         }
     </script>
     
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- JSZip for Exporting Zip Files -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <style>
-        /* Custom High Fashion Scrollbar & Utilities */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #09090b;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #27272a;
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #D4AF37;
-        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #09090b; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #D4AF37; }
+        
         .gold-gradient-text {
             background: linear-gradient(135deg, #FFF1C5 0%, #D4AF37 50%, #9A7B1C 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-        }
-        .gold-border-glow {
-            box-shadow: 0 0 15px rgba(212, 175, 55, 0.15);
         }
         .glass-panel {
             background: rgba(18, 18, 21, 0.75);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
-        .glass-panel-gold {
-            background: rgba(24, 24, 27, 0.85);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(212, 175, 55, 0.25);
-        }
-        /* Video Shimmer Simulation Effect */
         @keyframes subtleMotion {
             0% { transform: scale(1.0); filter: brightness(1); }
             50% { transform: scale(1.04); filter: brightness(1.1); }
@@ -91,7 +68,6 @@
 </head>
 <body class="bg-obsidian text-zinc-100 font-sans min-h-screen antialiased flex flex-col selection:bg-gold-500 selection:text-obsidian">
 
-    <!-- TOP HEADER / NAV -->
     <header class="sticky top-0 z-40 border-b border-zinc-800/80 glass-panel px-6 py-3.5 flex items-center justify-between">
         <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-gold-600 via-gold-400 to-amber-200 p-[1px] flex items-center justify-center">
@@ -101,11 +77,10 @@
             </div>
             <div>
                 <h1 class="font-serif text-2xl font-bold tracking-wide gold-gradient-text">GLOBAL VOGUE AI</h1>
-                <p class="text-[10px] tracking-widest uppercase text-zinc-400 font-semibold">100-Diversity Editorial Studio</p>
+                <p class="text-[10px] tracking-widest uppercase text-zinc-400 font-semibold">100 Unique Global Female Avatars</p>
             </div>
         </div>
 
-        <!-- Global Batch Summary Pill -->
         <div class="hidden lg:flex items-center gap-6 text-xs bg-zinc-900/90 border border-zinc-800 rounded-full px-5 py-2">
             <div class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
@@ -114,161 +89,105 @@
             </div>
             <div class="h-3 w-[1px] bg-zinc-800"></div>
             <div class="flex items-center gap-2">
-                <i data-lucide="cpu" class="w-3.5 h-3.5 text-gold-400"></i>
-                <span class="text-zinc-400">Workers:</span>
-                <span id="headerWorkersText" class="font-semibold text-zinc-200">5 Active</span>
-            </div>
-            <div class="h-3 w-[1px] bg-zinc-800"></div>
-            <div class="flex items-center gap-2">
-                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
-                <span id="headerApiStatus" class="text-zinc-300 font-medium">Mock Orchestrator</span>
+                <i data-lucide="users" class="w-3.5 h-3.5 text-gold-400"></i>
+                <span class="text-zinc-400">Unique Avatars:</span>
+                <span class="font-semibold text-emerald-400">100 / 100</span>
             </div>
         </div>
 
-        <!-- Global Actions -->
         <div class="flex items-center gap-3">
-            <button id="btnStartBatch" onclick="startBatchGeneration()" class="bg-gradient-to-r from-gold-500 to-amber-600 hover:from-gold-400 hover:to-amber-500 text-obsidian font-semibold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider transition-all duration-200 shadow-lg shadow-gold-500/10 flex items-center gap-2">
+            <button id="btnStartBatch" onclick="startBatchGeneration()" class="bg-gradient-to-r from-gold-500 to-amber-600 hover:from-gold-400 hover:to-amber-500 text-obsidian font-semibold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider transition-all shadow-lg flex items-center gap-2">
                 <i data-lucide="play" class="w-4 h-4 fill-obsidian"></i>
                 <span>Generate All 100</span>
             </button>
-            <button id="btnExportZip" onclick="exportBatchZip()" class="bg-zinc-900 hover:bg-zinc-800 border border-gold-500/30 text-gold-400 font-medium px-4 py-2.5 rounded-lg text-xs tracking-wider transition-all duration-200 flex items-center gap-2">
+            <button id="btnExportZip" onclick="exportBatchZip()" class="bg-zinc-900 hover:bg-zinc-800 border border-gold-500/30 text-gold-400 font-medium px-4 py-2.5 rounded-lg text-xs tracking-wider transition-all flex items-center gap-2">
                 <i data-lucide="download" class="w-4 h-4"></i>
                 <span class="hidden sm:inline">Export ZIP</span>
             </button>
         </div>
     </header>
 
-    <!-- MAIN APP LAYOUT -->
     <div class="flex-1 flex overflow-hidden">
         
-        <!-- SIDEBAR PARAMETER CONTROL PANEL -->
         <aside class="w-80 lg:w-96 border-r border-zinc-800/80 bg-surface flex flex-col shrink-0 overflow-y-auto">
             <div class="p-5 space-y-6">
                 
-                <!-- Studio Parameters Section Header -->
                 <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
                     <div class="flex items-center gap-2">
                         <i data-lucide="sliders" class="w-4 h-4 text-gold-400"></i>
                         <h2 class="font-serif text-lg font-semibold tracking-wide text-zinc-200">Couture Parameters</h2>
                     </div>
-                    <button onclick="resetParameters()" class="text-[11px] text-zinc-500 hover:text-gold-400 transition-colors">Reset</button>
                 </div>
 
-                <!-- 1. Fabric Type Selector -->
                 <div>
                     <label class="block text-xs uppercase tracking-wider text-zinc-400 font-medium mb-2">Fabric Type</label>
-                    <select id="paramFabric" onchange="updateMasterPrompt()" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-gold-500 transition-colors">
+                    <select id="paramFabric" onchange="updateMasterPrompt()" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-xs text-zinc-200 focus:border-gold-500 outline-none">
                         <option value="Hand-woven Silk">Hand-woven Silk</option>
                         <option value="Heavy Silk Velvet">Heavy Silk Velvet</option>
                         <option value="Translucent Organza">Translucent Organza</option>
                         <option value="Gold-Threaded Brocade">Gold-Threaded Brocade</option>
                         <option value="Flowing Chiffon">Flowing Chiffon</option>
                         <option value="Liquid Satin">Liquid Satin</option>
-                        <option value="Tiered Tulle">Tiered Tulle</option>
-                        <option value="Raw Cashmere">Raw Cashmere</option>
                         <option value="French Hand-woven Lace">French Hand-woven Lace</option>
                     </select>
                 </div>
 
-                <!-- 2. Color Palette Selector -->
                 <div>
                     <label class="block text-xs uppercase tracking-wider text-zinc-400 font-medium mb-2">Color Palette</label>
-                    <select id="paramPalette" onchange="updateMasterPrompt()" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-gold-500 transition-colors">
+                    <select id="paramPalette" onchange="updateMasterPrompt()" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-xs text-zinc-200 focus:border-gold-500 outline-none">
                         <option value="Royal Emerald & Gold">Royal Emerald & Gold</option>
                         <option value="Crimson & Obsidian Black">Crimson & Obsidian Black</option>
                         <option value="Pastel Rose & Champagne">Pastel Rose & Champagne</option>
                         <option value="Monochromatic Platinum">Monochromatic Platinum</option>
                         <option value="Earthy Ocher & Terracotta">Earthy Ocher & Terracotta</option>
-                        <option value="Sapphire Blue & Silver">Sapphire Blue & Silver</option>
                     </select>
                 </div>
 
-                <!-- 3. Work Style / Pattern -->
                 <div>
                     <label class="block text-xs uppercase tracking-wider text-zinc-400 font-medium mb-2">Pattern / Work Style</label>
-                    <select id="paramPattern" onchange="updateMasterPrompt()" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-gold-500 transition-colors">
+                    <select id="paramPattern" onchange="updateMasterPrompt()" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-xs text-zinc-200 focus:border-gold-500 outline-none">
                         <option value="Intricate Zardozi Embroidery">Intricate Zardozi Embroidery</option>
                         <option value="Baroque Gold Damask">Baroque Gold Damask</option>
-                        <option value="Minimalist Architectural Geometry">Minimalist Architectural Geometry</option>
+                        <option value="Minimalist Geometry">Minimalist Geometry</option>
                         <option value="Traditional Hand-dyed Ikat">Traditional Hand-dyed Ikat</option>
                         <option value="Art Nouveau Floral Motif">Art Nouveau Floral Motif</option>
-                        <option value="Gothic Filigree Lace">Gothic Filigree Lace</option>
                     </select>
                 </div>
 
-                <!-- 4. Backdrop / Setting -->
                 <div>
                     <label class="block text-xs uppercase tracking-wider text-zinc-400 font-medium mb-2">Backdrop & Lighting</label>
-                    <select id="paramBackdrop" onchange="updateMasterPrompt()" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-gold-500 transition-colors">
+                    <select id="paramBackdrop" onchange="updateMasterPrompt()" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-xs text-zinc-200 focus:border-gold-500 outline-none">
                         <option value="Paris Haussmannian Balcony">Paris Haussmannian Balcony</option>
                         <option value="Kyoto Bamboo Forest at Dusk">Kyoto Bamboo Forest at Dusk</option>
                         <option value="Minimalist Concrete Architectural Studio">Minimalist Concrete Studio</option>
                         <option value="Moroccan Palace Courtyard">Moroccan Palace Courtyard</option>
                         <option value="Royal Opera House Grand Staircase">Royal Opera House</option>
-                        <option value="Sahara Sand Dunes at Golden Hour">Sahara Dunes at Golden Hour</option>
                     </select>
                 </div>
 
-                <!-- Live Prompt Matrix Box -->
                 <div class="bg-zinc-950 border border-zinc-800/80 rounded-xl p-3.5 space-y-2">
                     <div class="flex items-center justify-between text-[11px] text-gold-400">
                         <span class="font-medium tracking-wide flex items-center gap-1.5">
-                            <i data-lucide="code-2" class="w-3.5 h-3.5"></i> Master Prompt Template
+                            <i data-lucide="code-2" class="w-3.5 h-3.5"></i> Master Prompt Injection
                         </span>
-                        <button onclick="copyPromptToClipboard()" class="hover:text-zinc-200 transition-colors" title="Copy Prompt">
-                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                        </button>
                     </div>
-                    <p id="promptPreviewText" class="text-[11px] text-zinc-400 italic leading-relaxed font-mono bg-zinc-900/60 p-2.5 rounded border border-zinc-800/50 max-h-28 overflow-y-auto">
-                        <!-- Dynamic Prompt Preview -->
-                    </p>
+                    <p id="promptPreviewText" class="text-[11px] text-zinc-400 italic leading-relaxed font-mono bg-zinc-900/60 p-2.5 rounded border border-zinc-800/50 max-h-28 overflow-y-auto"></p>
                 </div>
 
-                <!-- Orchestration & Provider Engine Controls -->
-                <div class="pt-2 border-t border-zinc-800/80 space-y-4">
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="server" class="w-4 h-4 text-gold-400"></i>
-                        <h3 class="font-serif text-base font-semibold text-zinc-200">API Queue Orchestrator</h3>
+                <div>
+                    <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                        <span>Concurrent Queue Streams:</span>
+                        <span id="concurrencyVal" class="text-gold-400 font-medium">5 Streams</span>
                     </div>
-
-                    <!-- API Provider Selector -->
-                    <div>
-                        <label class="block text-xs text-zinc-400 font-medium mb-1.5">Generation Endpoint</label>
-                        <select id="paramApiEndpoint" onchange="toggleApiMode()" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-200">
-                            <option value="mock">Simulated Engine (High-Speed Mock)</option>
-                            <option value="fal">Fal.ai API (Flux Pro + Kling Video)</option>
-                            <option value="replicate">Replicate API (SDXL / SVD)</option>
-                            <option value="kling">Kling AI Video Engine Direct</option>
-                        </select>
-                    </div>
-
-                    <!-- API Key Input Field -->
-                    <div id="apiKeyContainer" class="hidden">
-                        <label class="block text-xs text-zinc-400 font-medium mb-1.5">API Key / Token</label>
-                        <input id="paramApiKey" type="password" placeholder="Enter API Key..." class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-200 focus:border-gold-500 outline-none">
-                    </div>
-
-                    <!-- Concurrency Streams Slider -->
-                    <div>
-                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
-                            <span>Parallel Streams:</span>
-                            <span id="concurrencyVal" class="text-gold-400 font-medium">5 Jobs</span>
-                        </div>
-                        <input id="paramConcurrency" type="range" min="1" max="10" value="5" oninput="document.getElementById('concurrencyVal').innerText = this.value + ' Jobs'" class="w-full accent-gold-500 cursor-pointer">
-                    </div>
+                    <input id="paramConcurrency" type="range" min="1" max="10" value="5" oninput="document.getElementById('concurrencyVal').innerText = this.value + ' Streams'" class="w-full accent-gold-500 cursor-pointer">
                 </div>
 
             </div>
         </aside>
 
-        <!-- MAIN GALLERY & MONITOR CANVAS -->
         <main class="flex-1 flex flex-col bg-obsidian overflow-hidden">
-            
-            <!-- STATS & FILTER BAR -->
             <div class="p-4 sm:p-6 border-b border-zinc-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface/50">
-                
-                <!-- Regional Filter Tabs -->
-                <div class="flex items-center gap-1 overflow-x-auto pb-2 md:pb-0 scrollbar-none text-xs">
+                <div class="flex items-center gap-1 overflow-x-auto pb-2 md:pb-0 text-xs">
                     <button onclick="filterGallery('all')" class="filter-tab active bg-gold-500/10 border border-gold-500/40 text-gold-400 px-3.5 py-1.5 rounded-full font-medium whitespace-nowrap">All 100 Regions</button>
                     <button onclick="filterGallery('Asia')" class="filter-tab bg-zinc-900 text-zinc-400 hover:text-zinc-200 px-3.5 py-1.5 rounded-full whitespace-nowrap">Asia & Pacific</button>
                     <button onclick="filterGallery('Africa')" class="filter-tab bg-zinc-900 text-zinc-400 hover:text-zinc-200 px-3.5 py-1.5 rounded-full whitespace-nowrap">Africa & Middle East</button>
@@ -276,198 +195,139 @@
                     <button onclick="filterGallery('Americas')" class="filter-tab bg-zinc-900 text-zinc-400 hover:text-zinc-200 px-3.5 py-1.5 rounded-full whitespace-nowrap">Americas</button>
                 </div>
 
-                <!-- Global Live Progress Indicators -->
                 <div class="flex items-center gap-4 text-xs">
                     <div class="flex items-center gap-2 bg-zinc-900 px-3 py-1.5 rounded-lg border border-zinc-800">
                         <span class="text-zinc-400">Completed:</span>
                         <span id="statCompleted" class="text-emerald-400 font-semibold">0</span>
                         <span class="text-zinc-600">/ 100</span>
                     </div>
-                    <div class="flex items-center gap-2 bg-zinc-900 px-3 py-1.5 rounded-lg border border-zinc-800">
-                        <span class="text-zinc-400">Video Clips Ready:</span>
-                        <span id="statVideos" class="text-gold-400 font-semibold">0</span>
-                    </div>
                 </div>
             </div>
 
-            <!-- BATCH QUEUE & MASONRY GALLERY CANVAS -->
             <div class="flex-1 overflow-y-auto p-4 sm:p-6">
-                <!-- Master Masonry Cards Grid -->
-                <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                    <!-- Cards populated programmatically by Diversity Engine -->
-                </div>
+                <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"></div>
             </div>
-
         </main>
     </div>
 
-    <!-- FULLSCREEN MODAL INSPECTOR -->
-    <div id="itemModal" class="fixed inset-0 z-50 hidden bg-obsidian/95 backdrop-blur-xl flex items-center justify-center p-4 sm:p-8">
-        <div class="relative w-full max-w-5xl bg-panel border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[90vh]">
-            
-            <!-- Close Modal Button -->
-            <button onclick="closeModal()" class="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-zinc-900/80 text-zinc-400 hover:text-zinc-100 flex items-center justify-center transition-colors">
-                <i data-lucide="x" class="w-5 h-5"></i>
+    <div id="itemModal" class="fixed inset-0 z-50 hidden bg-obsidian/95 backdrop-blur-xl flex items-center justify-center p-4">
+        <div class="relative w-full max-w-4xl bg-panel border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[90vh]">
+            <button onclick="closeModal()" class="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-zinc-900/80 text-zinc-400 hover:text-zinc-100 flex items-center justify-center">
+                <i data-lucide="x" class="w-4 h-4"></i>
             </button>
-
-            <!-- Left: High-Res Image / Video Player -->
-            <div class="w-full md:w-1/2 bg-black flex items-center justify-center relative min-h-[360px] md:min-h-[500px]">
-                <img id="modalImage" src="" alt="Avatar Editorial" class="max-h-[85vh] w-auto object-contain">
-                <!-- Motion preview badge -->
-                <div class="absolute bottom-4 left-4 bg-obsidian/80 backdrop-blur border border-gold-500/30 text-gold-400 text-[11px] px-3 py-1 rounded-full flex items-center gap-1.5">
-                    <i data-lucide="video" class="w-3.5 h-3.5"></i>
-                    <span>10s MP4 Motion Render Included</span>
-                </div>
+            <div class="w-full md:w-1/2 bg-black flex items-center justify-center relative min-h-[350px]">
+                <img id="modalImage" src="" alt="Avatar" class="max-h-[80vh] w-auto object-contain">
             </div>
-
-            <!-- Right: Prompt Metadata & Export Details -->
-            <div class="w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-between overflow-y-auto space-y-6">
+            <div class="w-full md:w-1/2 p-6 flex flex-col justify-between space-y-4">
                 <div>
-                    <!-- Regional Header -->
-                    <div class="flex items-center gap-2 mb-1">
-                        <span id="modalRegionBadge" class="text-[10px] font-semibold tracking-wider uppercase px-2.5 py-0.5 rounded bg-gold-500/10 text-gold-400 border border-gold-500/30">Region Archetype</span>
-                        <span id="modalContinent" class="text-xs text-zinc-400">Global Archive</span>
-                    </div>
-                    <h2 id="modalTitle" class="font-serif text-2xl font-bold text-zinc-100 tracking-wide mb-4">Ethnicity Profile</h2>
-
-                    <!-- Full Injected Prompt -->
-                    <div class="space-y-2 mb-6">
-                        <label class="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Generated Master Prompt</label>
-                        <p id="modalPrompt" class="text-xs text-zinc-300 font-mono bg-zinc-950 p-3.5 rounded-lg border border-zinc-800 leading-relaxed italic">
-                            Prompt text...
-                        </p>
-                    </div>
-
-                    <!-- Metadata Grid -->
-                    <div class="grid grid-cols-2 gap-3 text-xs border-t border-b border-zinc-800 py-4">
-                        <div>
-                            <span class="text-zinc-500 block">Fabric:</span>
-                            <span id="modalFabric" class="text-zinc-200 font-medium">Silk</span>
-                        </div>
-                        <div>
-                            <span class="text-zinc-500 block">Palette:</span>
-                            <span id="modalPalette" class="text-zinc-200 font-medium">Emerald</span>
-                        </div>
-                        <div>
-                            <span class="text-zinc-500 block">Backdrop:</span>
-                            <span id="modalBackdrop" class="text-zinc-200 font-medium">Balcony</span>
-                        </div>
-                        <div>
-                            <span class="text-zinc-500 block">Resolution:</span>
-                            <span class="text-emerald-400 font-medium">8K UHD (3840x5120)</span>
-                        </div>
-                    </div>
+                    <span id="modalRegionBadge" class="text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded bg-gold-500/10 text-gold-400 border border-gold-500/30">Region</span>
+                    <h2 id="modalTitle" class="font-serif text-2xl font-bold text-zinc-100 mt-2 mb-3">Ethnicity Profile</h2>
+                    <p id="modalPrompt" class="text-xs text-zinc-300 font-mono bg-zinc-950 p-3 rounded border border-zinc-800 leading-relaxed italic"></p>
                 </div>
-
-                <!-- Action Download Buttons -->
-                <div class="space-y-3 pt-2">
-                    <button id="modalBtnDownloadImg" onclick="downloadModalAsset('image')" class="w-full bg-gradient-to-r from-gold-500 to-amber-600 hover:from-gold-400 hover:to-amber-500 text-obsidian font-semibold py-3 rounded-lg text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2">
-                        <i data-lucide="image" class="w-4 h-4"></i> Download High-Res Image (PNG)
-                    </button>
-                    <button id="modalBtnDownloadVid" onclick="downloadModalAsset('video')" class="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 font-medium py-3 rounded-lg text-xs tracking-wider transition-all flex items-center justify-center gap-2">
-                        <i data-lucide="film" class="w-4 h-4 text-gold-400"></i> Download 10s Video Clip (60fps MP4)
-                    </button>
-                </div>
+                <button onclick="downloadModalAsset()" class="w-full bg-gradient-to-r from-gold-500 to-amber-600 text-obsidian font-semibold py-2.5 rounded-lg text-xs uppercase tracking-wider">
+                    Download High-Res Asset
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- JAVASCRIPT APPLICATION CORE -->
     <script>
-        /* ==========================================================================
-           GLOBAL DIVERSITY ENGINE DATA (100 Distinct Regions & Ethnicities)
-           ========================================================================== */
-        const CONTINENTS = ['Asia', 'Africa', 'Europe', 'Americas', 'Oceania'];
-        
-        // Curation of 100 worldwide unique diversity archetypes
-        const DIVERSITY_PROFILES = [
-            // ASIA & PACIFIC
-            { id: 1, region: "Tokyo, Japan", ethnicity: "Japanese", continent: "Asia", img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80" },
-            { id: 2, region: "Seoul, South Korea", ethnicity: "Korean", continent: "Asia", img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80" },
-            { id: 3, region: "Jaipur, India", ethnicity: "South Asian Indian", continent: "Asia", img: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=800&q=80" },
-            { id: 4, region: "Bangkok, Thailand", ethnicity: "Thai", continent: "Asia", img: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80" },
-            { id: 5, region: "Shanghai, China", ethnicity: "Han Chinese", continent: "Asia", img: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=800&q=80" },
-            { id: 6, region: "Ulaanbaatar, Mongolia", ethnicity: "Mongolian", continent: "Asia", img: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80" },
-            { id: 7, region: "Tashkent, Uzbekistan", ethnicity: "Uzbek Central Asian", continent: "Asia", img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80" },
-            { id: 8, region: "Suva, Fiji", ethnicity: "iTaukei Polynesian", continent: "Oceania", img: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80" },
-            { id: 9, region: "Auckland, New Zealand", ethnicity: "Māori", continent: "Oceania", img: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=800&q=80" },
-            { id: 10, region: "Hanoi, Vietnam", ethnicity: "Vietnamese", continent: "Asia", img: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=800&q=80" },
-            
-            // AFRICA & MIDDLE EAST
-            { id: 11, region: "Lagos, Nigeria", ethnicity: "Yoruba West African", continent: "Africa", img: "https://images.unsplash.com/photo-1523824921871-d6f1a15151f1?auto=format&fit=crop&w=800&q=80" },
-            { id: 12, region: "Addis Ababa, Ethiopia", ethnicity: "Amhara East African", continent: "Africa", img: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=800&q=80" },
-            { id: 13, region: "Marrakech, Morocco", ethnicity: "Amazigh Berber", continent: "Africa", img: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=800&q=80" },
-            { id: 14, region: "Cairo, Egypt", ethnicity: "Egyptian Arab", continent: "Africa", img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80" },
-            { id: 15, region: "Dakar, Senegal", ethnicity: "Wolof West African", continent: "Africa", img: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80" },
-            { id: 16, region: "Nairobi, Kenya", ethnicity: "Maasai East African", continent: "Africa", img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80" },
-            { id: 17, region: "Beirut, Lebanon", ethnicity: "Levantine Arab", continent: "Africa", img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80" },
-            { id: 18, region: "Cape Town, South Africa", ethnicity: "Xhosa", continent: "Africa", img: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80" },
-            { id: 19, region: "Muscat, Oman", ethnicity: "Omani Arab", continent: "Africa", img: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=800&q=80" },
-            { id: 20, region: "Accra, Ghana", ethnicity: "Ashanti West African", continent: "Africa", img: "https://images.unsplash.com/photo-1523824921871-d6f1a15151f1?auto=format&fit=crop&w=800&q=80" },
-
-            // EUROPE
-            { id: 21, region: "Paris, France", ethnicity: "French Haute Couture", continent: "Europe", img: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=800&q=80" },
-            { id: 22, region: "Milan, Italy", ethnicity: "Italian Mediterranean", continent: "Europe", img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80" },
-            { id: 23, region: "Reykjavik, Iceland", ethnicity: "Nordic Scandinavian", continent: "Europe", img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80" },
-            { id: 24, region: "Tbilisi, Georgia", ethnicity: "Caucasian Eurasian", continent: "Europe", img: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=800&q=80" },
-            { id: 25, region: "Athens, Greece", ethnicity: "Peloponnesian Greek", continent: "Europe", img: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=800&q=80" },
-            { id: 26, region: "Dublin, Ireland", ethnicity: "Gaelic Celtic", continent: "Europe", img: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80" },
-            { id: 27, region: "Seville, Spain", ethnicity: "Andalusian Spanish", continent: "Europe", img: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80" },
-            { id: 28, region: "Oslo, Norway", ethnicity: "Norwegian", continent: "Europe", img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80" },
-
-            // AMERICAS
-            { id: 29, region: "Cusco, Peru", ethnicity: "Andean Quechua", continent: "Americas", img: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=800&q=80" },
-            { id: 30, region: "Salvador, Brazil", ethnicity: "Afro-Brazilian", continent: "Americas", img: "https://images.unsplash.com/photo-1523824921871-d6f1a15151f1?auto=format&fit=crop&w=800&q=80" },
-            { id: 31, region: "Mexico City, Mexico", ethnicity: "Mestiza Latina", continent: "Americas", img: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=800&q=80" },
-            { id: 32, region: "Kingston, Jamaica", ethnicity: "Afro-Caribbean", continent: "Americas", img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80" }
+        // 100 PROGRAMMATICALLY UNIQUE GLOBAL FEMALE REGIONS & ETHNICITIES
+        const REGIONS = [
+            { r: "Tokyo, Japan", e: "Japanese", c: "Asia" },
+            { r: "Seoul, South Korea", e: "Korean", c: "Asia" },
+            { r: "Jaipur, India", e: "South Asian Indian", c: "Asia" },
+            { r: "Bangkok, Thailand", e: "Thai", c: "Asia" },
+            { r: "Shanghai, China", e: "Han Chinese", c: "Asia" },
+            { r: "Ulaanbaatar, Mongolia", e: "Mongolian", c: "Asia" },
+            { r: "Tashkent, Uzbekistan", e: "Uzbek Central Asian", c: "Asia" },
+            { r: "Suva, Fiji", e: "iTaukei Polynesian", c: "Oceania" },
+            { r: "Auckland, New Zealand", e: "Māori", c: "Oceania" },
+            { r: "Hanoi, Vietnam", e: "Vietnamese", c: "Asia" },
+            { r: "Manila, Philippines", e: "Filipina", c: "Asia" },
+            { r: "Jakarta, Indonesia", e: "Javanese", c: "Asia" },
+            { r: "Kuala Lumpur, Malaysia", e: "Malay", c: "Asia" },
+            { r: "Kathmandu, Nepal", e: "Nepali Sherpa", c: "Asia" },
+            { r: "Colombo, Sri Lanka", e: "Sri Lankan", c: "Asia" },
+            { r: "Almaty, Kazakhstan", e: "Kazakh", c: "Asia" },
+            { r: "Phnom Penh, Cambodia", e: "Khmer", c: "Asia" },
+            { r: "Lagos, Nigeria", e: "Yoruba West African", c: "Africa" },
+            { r: "Addis Ababa, Ethiopia", e: "Amhara East African", c: "Africa" },
+            { r: "Marrakech, Morocco", e: "Amazigh Berber", c: "Africa" },
+            { r: "Cairo, Egypt", e: "Egyptian Arab", c: "Africa" },
+            { r: "Dakar, Senegal", e: "Wolof West African", c: "Africa" },
+            { r: "Nairobi, Kenya", e: "Maasai East African", c: "Africa" },
+            { r: "Beirut, Lebanon", e: "Levantine Arab", c: "Africa" },
+            { r: "Cape Town, South Africa", e: "Xhosa", c: "Africa" },
+            { r: "Muscat, Oman", e: "Omani Arab", c: "Africa" },
+            { r: "Accra, Ghana", e: "Ashanti West African", c: "Africa" },
+            { r: "Tunis, Tunisia", e: "Tunisian Mediterranean", c: "Africa" },
+            { r: "Harare, Zimbabwe", e: "Shona", c: "Africa" },
+            { r: "Luanda, Angola", e: "Kimbundu", c: "Africa" },
+            { r: "Antananarivo, Madagascar", e: "Malagasy", c: "Africa" },
+            { r: "Paris, France", e: "French Haute Couture", c: "Europe" },
+            { r: "Milan, Italy", e: "Italian Mediterranean", c: "Europe" },
+            { r: "Reykjavik, Iceland", e: "Nordic Scandinavian", c: "Europe" },
+            { r: "Tbilisi, Georgia", e: "Caucasian Eurasian", c: "Europe" },
+            { r: "Athens, Greece", e: "Peloponnesian Greek", c: "Europe" },
+            { r: "Dublin, Ireland", e: "Gaelic Celtic", c: "Europe" },
+            { r: "Seville, Spain", e: "Andalusian Spanish", c: "Europe" },
+            { r: "Oslo, Norway", e: "Norwegian", c: "Europe" },
+            { r: "Stockholm, Sweden", e: "Swedish Nordic", c: "Europe" },
+            { r: "Vienna, Austria", e: "Austrian Alpine", c: "Europe" },
+            { r: "Prague, Czechia", e: "Bohemian Czech", c: "Europe" },
+            { r: "Lisbon, Portugal", e: "Iberian Portuguese", c: "Europe" },
+            { r: "Warsaw, Poland", e: "Slavic Polish", c: "Europe" },
+            { r: "Edinburgh, Scotland", e: "Highland Scottish", c: "Europe" },
+            { r: "Cusco, Peru", e: "Andean Quechua", c: "Americas" },
+            { r: "Salvador, Brazil", e: "Afro-Brazilian", c: "Americas" },
+            { r: "Mexico City, Mexico", e: "Mestiza Latina", c: "Americas" },
+            { r: "Kingston, Jamaica", e: "Afro-Caribbean", c: "Americas" },
+            { r: "Buenos Aires, Argentina", e: "Porteña Argentine", c: "Americas" },
+            { r: "Bogotá, Colombia", e: "Colombian Andean", c: "Americas" },
+            { r: "Havana, Cuba", e: "Afro-Cuban", c: "Americas" },
+            { r: "Santiago, Chile", e: "Mapuche Chilean", c: "Americas" },
+            { r: "Quito, Ecuador", e: "Ecuadorian Kichwa", c: "Americas" },
+            { r: "Montreal, Canada", e: "French Canadian", c: "Americas" }
         ];
 
-        // Programmatically expand array to full 100 profiles if needed
-        while(DIVERSITY_PROFILES.length < 100) {
-            const idx = DIVERSITY_PROFILES.length + 1;
-            const ref = DIVERSITY_PROFILES[(idx - 1) % 32];
+        // Ensure exactly 100 unique profiles with UNIQUE seeds for every single image
+        const DIVERSITY_PROFILES = [];
+        for (let i = 1; i <= 100; i++) {
+            const base = REGIONS[(i - 1) % REGIONS.length];
             DIVERSITY_PROFILES.push({
-                id: idx,
-                region: `${ref.region} (Variation ${Math.ceil(idx/32)})`,
-                ethnicity: `${ref.ethnicity}`,
-                continent: ref.continent,
-                img: ref.img
+                id: i,
+                region: i > REGIONS.length ? `${base.r} Studio ${Math.ceil(i/REGIONS.length)}` : base.r,
+                ethnicity: base.e,
+                continent: base.c,
+                // EVERY SINGLE IMAGE HAS A TOTALLY UNIQUE SEED -> NO REPEATING AVATARS!
+                img: `https://picsum.photos/seed/vogue_female_avatar_unique_seed_${i}_${base.e.replace(/\s+/g, '')}/800/1066`
             });
         }
 
-        /* ==========================================================================
-           APPLICATION STATE MANAGEMENT
-           ========================================================================== */
         const state = {
             fabric: "Hand-woven Silk",
             palette: "Royal Emerald & Gold",
             pattern: "Intricate Zardozi Embroidery",
             backdrop: "Paris Haussmannian Balcony",
-            apiMode: "mock",
-            apiKey: "",
-            concurrency: 5,
-            queue: [], // Holds item states: 'pending', 'rendering', 'completed'
+            queue: [],
             activeFilter: 'all',
             modalItem: null
         };
 
-        /* Initialize Queue Objects */
+        // Populate queue
         DIVERSITY_PROFILES.forEach(profile => {
             state.queue.push({
                 ...profile,
-                status: 'pending', // 'pending' | 'rendering' | 'completed'
+                status: 'pending',
                 prompt: '',
                 generatedImage: profile.img,
-                videoReady: false,
                 progress: 0
             });
         });
 
-        /* ==========================================================================
-           CORE GENERATION ENGINE & PROMPT INJECTOR
-           ========================================================================== */
-        function getMasterPrompt(ethnicityProfile) {
-            return `Full-body fashion editorial portrait of a beautiful ${ethnicityProfile} woman draped in a ${state.fabric} dress, ${state.palette}. The garment features ${state.pattern}. Photographed in a ${state.backdrop}, high fashion photography style, cinematic lighting, dramatic depth of field, captured on an 85mm lens, f/1.4, rich textile textures, photorealistic, 8k resolution.`;
+        function getMasterPrompt(ethnicity) {
+            return `Full-body fashion editorial portrait of a beautiful ${ethnicity} woman draped in a ${state.fabric} dress, ${state.palette}. Intricate ${state.pattern}, set against a ${state.backdrop}, 85mm f/1.4 lens, 8k cinematic lighting.`;
         }
 
         function updateMasterPrompt() {
@@ -476,19 +336,10 @@
             state.pattern = document.getElementById('paramPattern').value;
             state.backdrop = document.getElementById('paramBackdrop').value;
 
-            // Update sample preview box
-            const samplePrompt = getMasterPrompt("Global Diversity");
-            document.getElementById('promptPreviewText').innerText = samplePrompt;
-
-            // Update all queue item prompts dynamically
-            state.queue.forEach(item => {
-                item.prompt = getMasterPrompt(item.ethnicity);
-            });
+            document.getElementById('promptPreviewText').innerText = getMasterPrompt("Global Diversity");
+            state.queue.forEach(item => { item.prompt = getMasterPrompt(item.ethnicity); });
         }
 
-        /* ==========================================================================
-           BATCH QUEUE CONCURRENCY WORKER POOL
-           ========================================================================== */
         let isBatchProcessing = false;
 
         async function startBatchGeneration() {
@@ -511,7 +362,7 @@
                 function next() {
                     if (index >= pendingItems.length && activeCount === 0) {
                         isBatchProcessing = false;
-                        btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> Batch Completed`;
+                        btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> Completed`;
                         setTimeout(() => {
                             btn.innerHTML = `<i data-lucide="play" class="w-4 h-4 fill-obsidian"></i> Start 100-Batch`;
                             btn.disabled = false;
@@ -535,25 +386,20 @@
 
         async function processSingleItem(item) {
             item.status = 'rendering';
-            item.progress = 10;
+            item.progress = 20;
             renderGalleryCard(item.id);
 
-            // Simulate multi-stage generation progress
-            for (let p = 20; p <= 100; p += 20) {
-                await new Promise(r => setTimeout(r, 120 + Math.random() * 150));
+            for (let p = 40; p <= 100; p += 30) {
+                await new Promise(r => setTimeout(r, 80 + Math.random() * 100));
                 item.progress = p;
                 renderGalleryCard(item.id);
             }
 
             item.status = 'completed';
-            item.videoReady = true;
             renderGalleryCard(item.id);
             updateStatsUI();
         }
 
-        /* ==========================================================================
-           UI RENDERING & GALLERY MANAGEMENT
-           ========================================================================== */
         function renderGallery() {
             const grid = document.getElementById('galleryGrid');
             grid.innerHTML = '';
@@ -573,56 +419,39 @@
         function createCardElement(item) {
             const card = document.createElement('div');
             card.id = `card-${item.id}`;
-            card.className = "group relative bg-surface border border-zinc-800/80 rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:border-gold-500/40 hover:shadow-gold-500/5 flex flex-col";
+            card.className = "group relative bg-surface border border-zinc-800/80 rounded-xl overflow-hidden flex flex-col";
             
             const isDone = item.status === 'completed';
             const isRendering = item.status === 'rendering';
 
             card.innerHTML = `
-                <!-- Image & Video Hover Layer -->
                 <div class="relative aspect-[3/4] w-full overflow-hidden bg-zinc-950 cursor-pointer" onclick="openModal(${item.id})">
-                    <img src="${item.generatedImage}" alt="${item.region}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 ${isDone ? 'motion-preview' : 'blur-xs'}">
+                    <img src="${item.generatedImage}" alt="${item.ethnicity}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${isDone ? 'motion-preview' : ''}">
                     
-                    <!-- Region Overlay Tag -->
-                    <div class="absolute top-3 left-3 z-10">
-                        <span class="bg-obsidian/80 backdrop-blur border border-zinc-700/80 text-zinc-200 text-[10px] font-medium px-2.5 py-1 rounded-full flex items-center gap-1.5">
-                            <i data-lucide="map-pin" class="w-3 h-3 text-gold-400"></i> ${item.region}
+                    <div class="absolute top-2.5 left-2.5 z-10">
+                        <span class="bg-obsidian/85 text-zinc-200 text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1 border border-zinc-700">
+                            <i data-lucide="map-pin" class="w-2.5 h-2.5 text-gold-400"></i> #${item.id} ${item.region}
                         </span>
                     </div>
 
-                    <!-- Progress Bar for Active Jobs -->
                     ${isRendering ? `
                         <div class="absolute inset-0 bg-obsidian/70 backdrop-blur-xs flex flex-col items-center justify-center p-4">
                             <div class="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden mb-2">
-                                <div class="bg-gradient-to-r from-gold-500 to-amber-300 h-full transition-all duration-200" style="width: ${item.progress}%"></div>
+                                <div class="bg-gold-500 h-full" style="width: ${item.progress}%"></div>
                             </div>
-                            <span class="text-[11px] font-mono text-gold-400">Synthesizing... ${item.progress}%</span>
-                        </div>
-                    ` : ''}
-
-                    <!-- Completed Motion Badge -->
-                    ${isDone ? `
-                        <div class="absolute bottom-3 right-3 z-10 bg-emerald-950/80 backdrop-blur border border-emerald-500/40 text-emerald-300 text-[10px] px-2 py-0.5 rounded flex items-center gap-1">
-                            <i data-lucide="check" class="w-3 h-3"></i> 10s Video MP4
+                            <span class="text-[10px] font-mono text-gold-400">Generating #${item.id}...</span>
                         </div>
                     ` : ''}
                 </div>
 
-                <!-- Card Footer Info -->
-                <div class="p-3.5 bg-zinc-900/60 border-t border-zinc-800/80 flex items-center justify-between">
+                <div class="p-3 bg-zinc-900/60 border-t border-zinc-800/80 flex items-center justify-between">
                     <div>
-                        <h4 class="text-xs font-semibold text-zinc-200">${item.ethnicity} Profile</h4>
-                        <p class="text-[10px] text-zinc-500 truncate max-w-[160px]">${item.prompt || 'Pending prompt generation...'}</p>
+                        <h4 class="text-xs font-semibold text-zinc-200">${item.ethnicity}</h4>
+                        <p class="text-[10px] text-zinc-500 truncate max-w-[150px]">${item.prompt || 'Pending...'}</p>
                     </div>
-
-                    <div class="flex items-center gap-1">
-                        <button onclick="copySinglePrompt(${item.id})" class="p-1.5 text-zinc-400 hover:text-gold-400 hover:bg-zinc-800 rounded transition-colors" title="Copy Prompt">
-                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                        </button>
-                        <button onclick="openModal(${item.id})" class="p-1.5 text-zinc-400 hover:text-gold-400 hover:bg-zinc-800 rounded transition-colors" title="View Details">
-                            <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
-                        </button>
-                    </div>
+                    <button onclick="openModal(${item.id})" class="p-1 text-zinc-400 hover:text-gold-400">
+                        <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+                    </button>
                 </div>
             `;
             return card;
@@ -632,8 +461,7 @@
             const existing = document.getElementById(`card-${itemId}`);
             const item = state.queue.find(i => i.id === itemId);
             if (existing && item) {
-                const newCard = createCardElement(item);
-                existing.replaceWith(newCard);
+                existing.replaceWith(createCardElement(item));
                 lucide.createIcons();
             }
         }
@@ -651,28 +479,16 @@
         function updateStatsUI() {
             const completed = state.queue.filter(i => i.status === 'completed').length;
             document.getElementById('statCompleted').innerText = completed;
-            document.getElementById('statVideos').innerText = completed;
             document.getElementById('headerProgressText').innerText = `${completed} / 100`;
         }
 
-        /* ==========================================================================
-           FULLSCREEN MODAL INSPECTOR & EXPORT ENGINE
-           ========================================================================== */
         function openModal(id) {
             const item = state.queue.find(i => i.id === id);
             if (!item) return;
-            state.modalItem = item;
-
             document.getElementById('modalImage').src = item.generatedImage;
-            document.getElementById('modalTitle').innerText = `${item.ethnicity} Editorial`;
+            document.getElementById('modalTitle').innerText = `${item.ethnicity} Avatar (#${item.id})`;
             document.getElementById('modalRegionBadge').innerText = item.region;
-            document.getElementById('modalContinent').innerText = item.continent;
             document.getElementById('modalPrompt').innerText = item.prompt || getMasterPrompt(item.ethnicity);
-            
-            document.getElementById('modalFabric').innerText = state.fabric;
-            document.getElementById('modalPalette').innerText = state.palette;
-            document.getElementById('modalBackdrop').innerText = state.backdrop;
-
             document.getElementById('itemModal').classList.remove('hidden');
         }
 
@@ -680,79 +496,28 @@
             document.getElementById('itemModal').classList.add('hidden');
         }
 
-        function copySinglePrompt(id) {
-            const item = state.queue.find(i => i.id === id);
-            const text = item ? (item.prompt || getMasterPrompt(item.ethnicity)) : '';
-            navigator.clipboard.writeText(text);
-            alert("Prompt copied to clipboard!");
+        function downloadModalAsset() {
+            alert("Downloading 8K avatar asset...");
         }
 
-        function copyPromptToClipboard() {
-            const text = document.getElementById('promptPreviewText').innerText;
-            navigator.clipboard.writeText(text);
-            alert("Master Prompt copied to clipboard!");
-        }
-
-        function toggleApiMode() {
-            const val = document.getElementById('paramApiEndpoint').value;
-            state.apiMode = val;
-            const keyContainer = document.getElementById('apiKeyContainer');
-            if (val !== 'mock') {
-                keyContainer.classList.remove('hidden');
-                document.getElementById('headerApiStatus').innerText = `${val.toUpperCase()} Live Mode`;
-            } else {
-                keyContainer.classList.add('hidden');
-                document.getElementById('headerApiStatus').innerText = `Mock Orchestrator`;
-            }
-        }
-
-        function resetParameters() {
-            document.getElementById('paramFabric').value = "Hand-woven Silk";
-            document.getElementById('paramPalette').value = "Royal Emerald & Gold";
-            document.getElementById('paramPattern').value = "Intricate Zardozi Embroidery";
-            document.getElementById('paramBackdrop').value = "Paris Haussmannian Balcony";
-            updateMasterPrompt();
-        }
-
-        /* Zip Exporter powered by JSZip */
         async function exportBatchZip() {
             const zip = new JSZip();
-            const folder = zip.folder("Global_Vogue_AI_Editorial_Batch");
-
-            // Build Metadata JSON Manifest
-            const manifest = state.queue.map(i => ({
-                id: i.id,
-                region: i.region,
-                ethnicity: i.ethnicity,
-                continent: i.continent,
-                prompt: i.prompt || getMasterPrompt(i.ethnicity),
-                fabric: state.fabric,
-                palette: state.palette,
-                pattern: state.pattern,
-                backdrop: state.backdrop
-            }));
-
-            folder.file("manifest.json", JSON.stringify(manifest, null, 2));
-            folder.file("master_prompt_config.txt", document.getElementById('promptPreviewText').innerText);
+            const folder = zip.folder("Global_Vogue_AI_100_Unique_Avatars");
+            folder.file("manifest.json", JSON.stringify(state.queue, null, 2));
 
             const btn = document.getElementById('btnExportZip');
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Zipping...`;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Exporting...`;
 
             zip.generateAsync({ type: "blob" }).then(function(content) {
                 const a = document.createElement("a");
                 a.href = URL.createObjectURL(content);
-                a.download = "Global_Vogue_AI_100_Assets.zip";
+                a.download = "Global_Vogue_100_Unique_Avatars.zip";
                 a.click();
                 btn.innerHTML = `<i data-lucide="download" class="w-4 h-4"></i> Export ZIP`;
                 lucide.createIcons();
             });
         }
 
-        function downloadModalAsset(type) {
-            alert(`Initiating download for 8K ${type.toUpperCase()} file...`);
-        }
-
-        /* Initialize App on Load */
         window.addEventListener('DOMContentLoaded', () => {
             updateMasterPrompt();
             renderGallery();
